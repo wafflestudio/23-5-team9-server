@@ -3,8 +3,8 @@ from sqlalchemy import String, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from carrot.db.common import Base
 
-from carrot.app.user import User
-from carrot.app.category import Category
+from carrot.app.user.models import User
+from carrot.app.category.models import Category
 
 class Product(Base):
     __tablename__ = "product"
@@ -16,7 +16,7 @@ class Product(Base):
     like_count: Mapped[int] = mapped_column(Integer, nullable=False)
     category_id: Mapped[str] = mapped_column(String(36), ForeignKey("category.id", ondelete="CASCADE"), primary_key=True, index=True)
 
-    category_id: Mapped[Category] = relationship("Cagetory")
+    category: Mapped[Category] = relationship("Cagetory")
     
 class UserProduct(Base):
     __tablename__ = "user_product"
@@ -27,5 +27,5 @@ class UserProduct(Base):
     like: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
     
-    user_id: Mapped[User] = relationship("User")
-    product_id: Mapped[Product] = relationship("Product")
+    user: Mapped[User] = relationship("User")
+    product: Mapped[Product] = relationship("Product")

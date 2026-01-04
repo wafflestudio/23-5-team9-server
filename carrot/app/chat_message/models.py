@@ -3,7 +3,7 @@ from sqlalchemy import String, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from carrot.db.common import Base
 
-from carrot.app.chat_room import Chatroom
+from carrot.app.chat_room.models import ChatRoom
 
 class ChatMessage(Base):
     __tablename__ = "chat_message"
@@ -15,4 +15,4 @@ class ChatMessage(Base):
     read_count: Mapped[int] = mapped_column(Integer, nullable=False)
     chatroom_id: Mapped[str] = mapped_column(String(36), ForeignKey("category.id", ondelete="CASCADE"), primary_key=True, index=True)
 
-    chatroom_id: Mapped[Chatroom] = relationship("Chatroom")
+    chatroom: Mapped[ChatRoom] = relationship("Chatroom")

@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from wapang.database.common import Base
+from carrot.db.common import Base
 
 class Region(Base):
     __tablename__ = "region"
