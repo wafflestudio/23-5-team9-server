@@ -20,7 +20,6 @@ class User(Base):
         String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4())
     )
     email: Mapped[str] = mapped_column(String(60), unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String(100))
 
     nickname: Mapped[str | None] = mapped_column(String(20))
     profile_image: Mapped[str | None] = mapped_column(String(150))
@@ -35,18 +34,34 @@ class User(Base):
         Enum(UserStatus), default=UserStatus.PENDING, nullable=False
     )
 
+    local_account: Mapped["LocalAccount"] = relationship(
+        "LocalAccount", back_populates="user"
+    )
+    social_account: Mapped["SocialAccount"] = relationship(
+        "SocialAccount", back_populates="user"
+    )
+
+
+class LocalAccount(Base):
+    __tablename__ = "local_account"
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    user: Mapped[User] = relationship("User", back_populates="local_account")
+    hashed_password: Mapped[str] = mapped_column(String(100))
+
 
 class SocialAccount(Base):
     __tablename__ = "social_account"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4())
-    )
-
     user_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False
+        String(36),
+        ForeignKey("user.id", ondelete="CASCADE"),
+        primary_key=True,
     )
-    user: Mapped[User] = relationship("User")
+    user: Mapped[User] = relationship("User", back_populates="social_account")
 
     provider: Mapped[str] = mapped_column(String(20))
     provider_sub: Mapped[str] = mapped_column(String(256))

@@ -19,7 +19,9 @@ class UserService:
 
         hashed_password = PasswordHasher().hash(password)
 
-        return self.user_repository.create_user(email, hashed_password)
+        user = self.user_repository.create_user(email)
+        self.user_repository.create_local_account(user.id, hashed_password)
+        return user
 
     def onboard_user(self, request: UserOnboardingRequest, user: User) -> User:
         for key, value in request.model_dump(exclude_none=True).items():
