@@ -1,0 +1,11 @@
+[project]
+name = "waffle-toy-project"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi",
+    "sqlalchemy>=2.0.45",
+    "uvicorn[standard]",
+]
