@@ -1,0 +1,96 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Header
+from fastapi import status
+
+from authlib.integrations.starlette_client import OAuth, OAuthError, StarletteOAuth2App
+from fastapi import FastAPI, HTTPException, status
+from fastapi.responses import RedirectResponse
+from starlette.config import Config
+from starlette.requests import Request
+
+from carrot.app.auth.schemas import TokenResponse, UserSigninRequest
+from carrot.app.auth.services import AuthService
+from carrot.app.auth.settings import AUTH_SETTINGS
+from carrot.app.user.models import SocialAccount
+
+auth_router = APIRouter()
+
+ACCESS_TOKEN_SECRET = AUTH_SETTINGS.ACCESS_TOKEN_SECRET
+REFRESH_TOKEN_SECRET = AUTH_SETTINGS.REFRESH_TOKEN_SECRET
+SHORT_SESSION_LIFESPAN = AUTH_SETTINGS.SHORT_SESSION_LIFESPAN
+LONG_SESSION_LIFESPAN = AUTH_SETTINGS.LONG_SESSION_LIFESPAN
+
+
+@auth_router.post("/tokens")
+def signin(
+    signin_request: UserSigninRequest, auth_service: Annotated[AuthService, Depends()]
+) -> TokenResponse:
+    access_token, refresh_token = auth_service.signin(
+        signin_request.email, signin_request.password
+    )
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+
+
+@auth_router.get("/tokens/refresh", response_model=TokenResponse)
+def refresh_token(
+    auth_service: Annotated[AuthService, Depends()],
+    authorization: Annotated[str | None, Header()] = None,
+) -> TokenResponse:
+    access_token, refresh_token = auth_service.refresh_tokens(authorization)
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+
+
+@auth_router.delete("/tokens", status_code=status.HTTP_204_NO_CONTENT)
+def delete_token(
+    auth_service: Annotated[AuthService, Depends()],
+    authorization: Annotated[str | None, Header()] = None,
+) -> None:
+    auth_service.delete_token(authorization)
+    return
+
+
+# configure OAuth client
+oauth = OAuth()
+oauth.register(
+    name="google",
+    client_id=AUTH_SETTINGS.GOOGLE_CLIENT_ID,
+    client_secret=AUTH_SETTINGS.GOOGLE_CLIENT_SECRET,
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    client_kwargs={"scope": "openid email profile"},
+)
+google: StarletteOAuth2App = oauth.create_client("google")  # type: ignore
+
+
+@auth_router.get("/oauth2/login/google", status_code=status.HTTP_200_OK)
+async def get_redirect_url(request: Request):
+    redirect_uri = str(request.url_for("receive_code"))
+    auth_data = await google.create_authorization_url(redirect_uri)
+    google_auth_url = auth_data.get("url")
+    await google.save_authorize_data(request, **auth_data)
+    print(f"DEBUG SESSION: {request.session}")
+    return {"redirect_url": google_auth_url}
+
+
+@auth_router.get("/oauth2/code/google")
+async def receive_code(
+    request: Request, auth_service: Annotated[AuthService, Depends()]
+):
+    redirect_uri = str(request.url_for("receive_code"))
+
+    # exchange auth code for token
+    try:
+        token = await google.authorize_access_token(request, redirect_uri=redirect_uri)
+    except OAuthError as error:
+        print(f"OAuth Error Detail: {error.error} - {error.description}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error.error
+        )
+
+    access_token, refresh_token = auth_service.handle_google_oauth2(token)
+    redirect_url = f"{AUTH_SETTINGS.FRONTEND_URL}?access_token={access_token}&refresh_token={refresh_token}"
+    return RedirectResponse(url=redirect_url)
