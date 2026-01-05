@@ -34,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           OUT="/tmp/requirements.txt.generated"
-          uv export --format requirements-txt --locked --no-dev -o "$OUT"
+          uv export --format requirements-txt --locked --no-dev --no-hashes -o "$OUT"
           if ! diff -u requirements.txt "$OUT"; then
             echo ""
             echo "❌ requirements.txt가 최신이 아닙니다."
