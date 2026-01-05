@@ -37,14 +37,11 @@ class AuthService:
 
     def _issue_token(self, user: User) -> tuple[str, str]:
         access_token = issue_token(user.id, SHORT_SESSION_LIFESPAN, ACCESS_TOKEN_SECRET)
-        refresh_token = issue_token(
-            user.id, LONG_SESSION_LIFESPAN, REFRESH_TOKEN_SECRET
-        )
-
+        refresh_token = issue_token(user.id, LONG_SESSION_LIFESPAN, REFRESH_TOKEN_SECRET)
         return access_token, refresh_token
 
-    def signin(self, email: str, password: str) -> tuple[str, str]:
-        user = self.user_repository.get_user_by_email(email)
+    async def signin(self, email: str, password: str) -> tuple[str, str]:
+        user = await self.user_repository.get_user_by_email(email)
         if user is None:
             raise InvalidAccountException()
 
@@ -52,77 +49,80 @@ class AuthService:
 
         return self._issue_token(user)
 
-    def block_refresh_token(self, token: str, exp: datetime) -> None:
-        self.auth_repository.block_refresh_token(token, exp)
+    async def block_refresh_token(self, token: str, exp: datetime) -> None:
+        await self.auth_repository.block_refresh_token(token, exp)
 
-    def refresh_tokens(self, authorization: str | None) -> tuple[str, str]:
+    async def refresh_tokens(self, authorization: str | None) -> tuple[str, str]:
         if authorization is None:
             raise UnauthenticatedException()
+
         token = get_token_from_authorization_header(authorization)
 
         # check if refresh token is already blocked
-        blocked_token = self.auth_repository.get_blocked_token(token)
-        if blocked_token != None:
+        blocked_token = await self.auth_repository.get_blocked_token(token)
+        if blocked_token is not None:
             raise RevokedTokenException()
 
         claims = verify_and_decode_token(token, REFRESH_TOKEN_SECRET)
 
-        exp = claims.get("exp", None)
+        exp = claims.get("exp")
         if exp is None:
             raise InvalidTokenException()
         exp_datetime = datetime.fromtimestamp(exp)
 
-        self.block_refresh_token(token, exp_datetime)
+        await self.block_refresh_token(token, exp_datetime)
 
-        user_id = claims.get("sub", None)
+        user_id = claims.get("sub")
         if user_id is None:
             raise InvalidTokenException()
+
         access_token = issue_token(user_id, SHORT_SESSION_LIFESPAN, ACCESS_TOKEN_SECRET)
-        refresh_token = issue_token(
-            user_id, LONG_SESSION_LIFESPAN, REFRESH_TOKEN_SECRET
-        )
+        refresh_token = issue_token(user_id, LONG_SESSION_LIFESPAN, REFRESH_TOKEN_SECRET)
         return access_token, refresh_token
 
-    def delete_token(self, authorization: str | None) -> None:
+    async def delete_token(self, authorization: str | None) -> None:
         if authorization is None:
             raise UnauthenticatedException()
+
         token = get_token_from_authorization_header(authorization)
 
-        # check if refresh token is already blocked
-        blocked_token = self.auth_repository.get_blocked_token(token)
-        if blocked_token != None:
+        blocked_token = await self.auth_repository.get_blocked_token(token)
+        if blocked_token is not None:
             raise RevokedTokenException()
 
         claims = verify_and_decode_token(token, REFRESH_TOKEN_SECRET)
 
-        exp = claims.get("exp", None)
+        exp = claims.get("exp")
         if exp is None:
             raise InvalidTokenException()
-        exp_datetime = datetime.fromtimestamp(exp)
-        self.block_refresh_token(token, exp_datetime)
 
-    def handle_google_oauth2(self, token: dict) -> tuple[str, str]:
+        exp_datetime = datetime.fromtimestamp(exp)
+        await self.block_refresh_token(token, exp_datetime)
+
+    async def handle_google_oauth2(self, token: dict) -> tuple[str, str]:
         user_info: dict = token.get("userinfo")  # type: ignore
         google_sub = user_info["sub"]
         email = user_info["email"]
 
         # sub에 대응하는 social account 혹은 email에 대응하는 user가 있는 경우 로그인
-        social_account = self.user_repository.get_social_account_by_provider(
+        social_account = await self.user_repository.get_social_account_by_provider(
             "google", google_sub
         )
-        if social_account != None:
+        if social_account is not None:
+            # social_account.user 접근이 lazy load면 여기서 또 I/O 터질 수 있음
+            # -> repo에서 user를 eager load 하거나 user_id로 user를 다시 조회하는 방식 추천
             return self._issue_token(social_account.user)
 
-        email_user = self.user_repository.get_user_by_email(email)
-        if email_user != None:
-            self.user_repository.create_social_account(
+        email_user = await self.user_repository.get_user_by_email(email)
+        if email_user is not None:
+            await self.user_repository.create_social_account(
                 email_user.id, "google", google_sub
             )
             return self._issue_token(email_user)
 
         # 아닌 경우 계정 생성
-        new_user = self.user_repository.create_user(email)
-        new_social = self.user_repository.create_social_account(
+        new_user = await self.user_repository.create_user(email)
+        await self.user_repository.create_social_account(
             new_user.id, "google", google_sub
         )
         return self._issue_token(new_user)

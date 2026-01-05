@@ -1,59 +1,42 @@
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine
-from sqlalchemy import pool
+from sqlalchemy import create_engine, pool
 
 from alembic import context
 
 from carrot.db.settings import DB_SETTINGS
-
 from carrot.db.common import Base
-import carrot.app.auth.models
-import carrot.app.category.models
-import carrot.app.chat_message.models
-import carrot.app.chat_room.models
-import carrot.app.product.models
-import carrot.app.region.models
-import carrot.app.user.models
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# 모델 import (autogenerate에 필요)
+import carrot.app.auth.models  # noqa: F401
+import carrot.app.category.models  # noqa: F401
+import carrot.app.chat_message.models  # noqa: F401
+import carrot.app.chat_room.models  # noqa: F401
+import carrot.app.product.models  # noqa: F401
+import carrot.app.region.models  # noqa: F401
+import carrot.app.user.models  # noqa: F401
+
+
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+# ✅ Alembic은 sync 드라이버로 강제
+sync_url = DB_SETTINGS.url.replace("+aiomysql", "+pymysql")
+config.set_main_option("sqlalchemy.url", sync_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    """
+    """Run migrations in 'offline' mode."""
     context.configure(
-        url=DB_SETTINGS.url,
+        url=sync_url,  # ✅ 여기
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,  # 선택: 타입 변경 감지
     )
 
     with context.begin_transaction():
@@ -61,17 +44,14 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
-    connectable = create_engine(DB_SETTINGS.url, poolclass=pool.NullPool)
+    """Run migrations in 'online' mode."""
+    connectable = create_engine(sync_url, poolclass=pool.NullPool)  # ✅ 여기
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,  # 선택
         )
 
         with context.begin_transaction():
