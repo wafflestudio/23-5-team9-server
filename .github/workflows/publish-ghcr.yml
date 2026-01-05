@@ -1,4 +1,4 @@
-name: Build & Push Docker image to GHCR
+name: Build & Push Docker image to GHCR + Deploy env to EC2
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,13 +28,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set image tag
+      - name: Set image tag and target env
         id: meta
         run: |
           if [ "${GITHUB_REF_NAME}" = "main" ]; then
             echo "tag=prod" >> $GITHUB_OUTPUT
+            echo "target=prod" >> $GITHUB_OUTPUT
           else
             echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "target=dev" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and push
@@ -46,3 +48,87 @@ jobs:
           tags: ghcr.io/wafflestudio/23-5-team9-server:${{ steps.meta.outputs.tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Write env file(s) on EC2 and restart target service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            mkdir -p ~/deploy
+
+            # 공통(DEV/PROD 동일) 값들
+            DB_DIALECT="${{ secrets.DB_DIALECT }}"
+            DB_DRIVER="${{ secrets.DB_DRIVER }}"
+            DB_HOST="${{ secrets.DB_HOST }}"
+            DB_PORT="${{ secrets.DB_PORT }}"
+
+            GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+
+            if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
+              cat > ~/deploy/.env.dev <<EOF
+            # ---- DB (common) ----
+            DB_DIALECT=${DB_DIALECT}
+            DB_DRIVER=${DB_DRIVER}
+            DB_HOST=${DB_HOST}
+            DB_PORT=${DB_PORT}
+
+            # ---- DB (dev) ----
+            DB_USER=${{ secrets.DB_USER_DEV }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_DEV }}
+            DB_DATABASE=${{ secrets.DB_DATABASE_DEV }}
+
+            # ---- AUTH (common) ----
+            GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+            GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+            # ---- AUTH (dev) ----
+            FRONTEND_URL=${{ secrets.FRONTEND_URL_DEV }}
+            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET_DEV }}
+            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_DEV }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET_DEV }}
+            EOF
+
+              chmod 600 ~/deploy/.env.dev
+
+              cd ~/deploy
+              docker compose pull api_dev
+              docker compose up -d --force-recreate api_dev
+              docker compose restart nginx
+
+            else
+              cat > ~/deploy/.env.prod <<EOF
+            # ---- DB (common) ----
+            DB_DIALECT=${DB_DIALECT}
+            DB_DRIVER=${DB_DRIVER}
+            DB_HOST=${DB_HOST}
+            DB_PORT=${DB_PORT}
+
+            # ---- DB (prod) ----
+            DB_USER=${{ secrets.DB_USER_PROD }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }}
+            DB_DATABASE=${{ secrets.DB_DATABASE_PROD }}
+
+            # ---- AUTH (common) ----
+            GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+            GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+
+            # ---- AUTH (prod) ----
+            FRONTEND_URL=${{ secrets.FRONTEND_URL_PROD }}
+            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET_PROD }}
+            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_PROD }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET_PROD }}
+            EOF
+
+              chmod 600 ~/deploy/.env.prod
+
+              cd ~/deploy
+              docker compose pull api_prod
+              docker compose up -d --force-recreate api_prod
+              docker compose restart nginx
+            fi
+
+            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
