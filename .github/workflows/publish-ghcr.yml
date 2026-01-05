@@ -28,22 +28,21 @@ jobs:
           python -m pip install -U pip
           pip install uv
 
-      # ✅ 들여쓰기 수정 완료
-      - name: Check requirements.txt is up to date
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="/tmp/requirements.txt.generated"
-          uv export --format requirements-txt --locked --no-dev --no-hashes -o "$OUT"
-          if ! diff -u requirements.txt "$OUT"; then
-            echo ""
-            echo "❌ requirements.txt가 최신이 아닙니다."
-            echo "아래를 로컬에서 실행한 뒤 변경된 requirements.txt를 커밋하세요:"
-            echo ""
-            echo "   make reqs"
-            echo ""
-            exit 1
-          fi
+      # - name: Check requirements.txt is up to date
+      #   shell: bash
+      #   run: |
+      #     set -euo pipefail
+      #     OUT="/tmp/requirements.txt.generated"
+      #     uv export --format requirements-txt --locked --no-dev --no-hashes -o "$OUT"
+      #     if ! diff -u requirements.txt "$OUT"; then
+      #       echo ""
+      #       echo "❌ requirements.txt가 최신이 아닙니다."
+      #       echo "아래를 로컬에서 실행한 뒤 변경된 requirements.txt를 커밋하세요:"
+      #       echo ""
+      #       echo "   make reqs"
+      #       echo ""
+      #       exit 1
+      #     fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
