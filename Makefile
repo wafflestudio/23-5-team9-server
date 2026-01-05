@@ -10,4 +10,5 @@ reqs:
 		--format requirements-txt \
 		--locked \
 		--no-dev \
+		--no-hashes \
 		-o requirements.txt
