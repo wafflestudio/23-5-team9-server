@@ -1,63 +1,89 @@
 from typing import Annotated
-import uuid
+from unittest import result
 
 from fastapi import Depends
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy import select, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from carrot.app.user.models import LocalAccount, SocialAccount, User
 from carrot.db.connection import get_db_session
 
 
 class UserRepository:
-    def __init__(self, session: Annotated[Session, Depends(get_db_session)]) -> None:
+    def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
         self.session = session
 
-    def create_user(self, email: str) -> User:
+    async def create_user(self, email: str) -> User:
         user = User(email=email)
         self.session.add(user)
-
-        self.session.flush()
-
+        await self.session.flush()
         return user
 
-    def update_user(self, user: User) -> User:
-        self.session.merge(user)
-        self.session.flush()
-        return user
+    async def update_user(self, user: User) -> User:
+        merged = await self.session.merge(user)
+        await self.session.flush()
+        return merged
 
-    def get_user_by_id(self, user_id: str) -> User | None:
-        return self.session.scalar(select(User).where(User.id == user_id))
+    async def get_user_by_id(self, user_id: str) -> User | None:
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.region),         # 유저의 동네 정보 (Region 모델)
+                selectinload(User.local_account),  # 유저의 로컬 계정 정보 (비밀번호 등)
+                selectinload(User.social_account)  # 유저의 소셜 계정 정보 (구글 등)
+            )
+            .where(User.id == user_id)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def get_user_by_email(self, email: str) -> User | None:
-        return self.session.scalar(select(User).where(User.email == email))
+    async def get_user_by_email(self, email: str) -> User | None:
+        result = await self.session.execute(
+            select(User)
+            .options(selectinload(User.local_account)) 
+            .where(User.email == email)
+        )
+        return result.scalar_one_or_none()
 
-    def get_user_by_nickname(self, nickname: str) -> User | None:
-        return self.session.scalar(select(User).where(User.nickname == nickname))
+    async def get_user_by_nickname(self, nickname: str) -> User | None:
+        result = await self.session.execute(select(User).where(User.nickname == nickname))
+        return result.scalar_one_or_none()
 
-    def get_social_account_by_provider(
-        self, provider: str, sub: str
+    async def get_social_account_by_provider(
+            self, provider: str, sub: str
     ) -> SocialAccount | None:
-        return self.session.scalar(
-            select(SocialAccount).where(
-                SocialAccount.provider == provider and SocialAccount.provider_sub == sub
+        stmt = (
+            select(SocialAccount)
+            .options(selectinload(SocialAccount.user))
+            .where(
+                and_(
+                    SocialAccount.provider == provider,
+                    SocialAccount.provider_sub == sub,
+                )
             )
         )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
-    def create_social_account(self, user_id: str, provider: str, provider_sub: str):
+    async def create_social_account(
+        self, user_id: str, provider: str, provider_sub: str
+    ) -> SocialAccount:
         social_account = SocialAccount(
             user_id=user_id, provider=provider, provider_sub=provider_sub
         )
         self.session.add(social_account)
-        self.session.flush()
+        await self.session.flush()
         return social_account
 
-    def get_local_account_by_id(self, user_id: str):
-        return self.session.scalar(
+    async def get_local_account_by_id(self, user_id: str) -> LocalAccount | None:
+        result = await self.session.execute(
             select(LocalAccount).where(LocalAccount.user_id == user_id)
         )
+        return result.scalar_one_or_none()
 
-    def create_local_account(self, user_id: str, hashed_password: str):
-        local_acount = LocalAccount(user_id=user_id, hashed_password=hashed_password)
-        self.session.add(local_acount)
-        self.session.flush()
-        return local_acount
+    async def create_local_account(self, user_id: str, hashed_password: str) -> LocalAccount:
+        local_account = LocalAccount(user_id=user_id, hashed_password=hashed_password)
+        self.session.add(local_account)
+        await self.session.flush()
+        return local_account

@@ -2,11 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 ENV PYTHONUNBUFFERED=1
-ENV PATH="/app/.venv/bin:$PATH"
 
-COPY pyproject.toml uv.lock ./
-RUN pip install -U pip && pip install uv && uv sync --frozen
+COPY requirements.txt ./
+RUN pip install -U pip \
+ && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 EXPOSE 8000
-CMD ["uvicorn", "carrot.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+CMD ["python", "-m", "uvicorn", "carrot.main:app", "--host", "0.0.0.0", "--port", "8000"]
