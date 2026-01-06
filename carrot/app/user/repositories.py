@@ -1,8 +1,10 @@
 from typing import Annotated
+from unittest import result
 
 from fastapi import Depends
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from carrot.app.user.models import LocalAccount, SocialAccount, User
 from carrot.db.connection import get_db_session
@@ -24,11 +26,24 @@ class UserRepository:
         return merged
 
     async def get_user_by_id(self, user_id: str) -> User | None:
-        result = await self.session.execute(select(User).where(User.id == user_id))
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.region),         # 유저의 동네 정보 (Region 모델)
+                selectinload(User.local_account),  # 유저의 로컬 계정 정보 (비밀번호 등)
+                selectinload(User.social_account)  # 유저의 소셜 계정 정보 (구글 등)
+            )
+            .where(User.id == user_id)
+        )
+        result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_user_by_email(self, email: str) -> User | None:
-        result = await self.session.execute(select(User).where(User.email == email))
+        result = await self.session.execute(
+            select(User)
+            .options(selectinload(User.local_account)) 
+            .where(User.email == email)
+        )
         return result.scalar_one_or_none()
 
     async def get_user_by_nickname(self, nickname: str) -> User | None:
@@ -36,12 +51,16 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def get_social_account_by_provider(
-        self, provider: str, sub: str
+            self, provider: str, sub: str
     ) -> SocialAccount | None:
-        stmt = select(SocialAccount).where(
-            and_(
-                SocialAccount.provider == provider,
-                SocialAccount.provider_sub == sub,
+        stmt = (
+            select(SocialAccount)
+            .options(selectinload(SocialAccount.user))
+            .where(
+                and_(
+                    SocialAccount.provider == provider,
+                    SocialAccount.provider_sub == sub,
+                )
             )
         )
         result = await self.session.execute(stmt)

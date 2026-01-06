@@ -26,6 +26,7 @@ class UserService:
 
         user = await self.user_repository.create_user(email)
         await self.user_repository.create_local_account(user.id, hashed_password)
+        
         return user
 
     async def onboard_user(self, request: UserOnboardingRequest, user: User) -> User:
@@ -33,6 +34,7 @@ class UserService:
             setattr(user, key, value)
 
         user.status = UserStatus.ACTIVE
+        
         updated = await self.user_repository.update_user(user)
         return updated
 
