@@ -131,8 +131,23 @@ jobs:
             EOF
               chmod 600 ~/deploy/.env.prod
               cd ~/deploy
-              docker compose pull api_prod
-              docker compose up -d --force-recreate api_prod
-              docker compose restart nginx
-            fi
+              if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
+                  # 1. 최신 이미지 풀
+                  docker compose pull api_dev
+                  
+                  # 2. 마이그레이션 실행 (임시 컨테이너에서 alembic 실행)
+                  # --rm: 실행 후 컨테이너 자동 삭제, --env-file: 생성한 env 적용
+                  docker compose run --rm --env-file .env.dev api_dev alembic upgrade head
+                  
+                  # 3. 서비스 실행
+                  docker compose up -d --force-recreate api_dev
+                  docker compose restart nginx
+              else
+                  # prod 환경도 동일하게 적용
+                  docker compose pull api_prod
+                  docker compose run --rm --env-file .env.prod api_prod alembic upgrade head
+                  docker compose up -d --force-recreate api_prod
+                  docker compose restart nginx
+              fi
+            fi  
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
