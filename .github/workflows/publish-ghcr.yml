@@ -84,7 +84,9 @@ jobs:
           script: |
             set -euo pipefail
             mkdir -p ~/deploy
+            cd ~/deploy
 
+            # 1. 공통 환경 변수 설정
             DB_DIALECT="${{ secrets.DB_DIALECT }}"
             DB_DRIVER="${{ secrets.DB_DRIVER }}"
             DB_HOST="${{ secrets.DB_HOST }}"
@@ -92,8 +94,10 @@ jobs:
             GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
             GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
 
+            # 2. 타겟(dev/prod)에 따른 처리
             if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
-              cat > ~/deploy/.env.dev <<EOF
+              # .env.dev 작성
+              cat > .env.dev <<EOF
             DB_DIALECT=${DB_DIALECT}
             DB_DRIVER=${DB_DRIVER}
             DB_HOST=${DB_HOST}
@@ -108,13 +112,16 @@ jobs:
             REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_DEV }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET_DEV }}
             EOF
-              chmod 600 ~/deploy/.env.dev
-              cd ~/deploy
+              chmod 600 .env.dev
+
+              # 배포 및 마이그레이션 실행
               docker compose pull api_dev
+              docker compose run --rm --env-file .env.dev api_dev alembic upgrade head
               docker compose up -d --force-recreate api_dev
-              docker compose restart nginx
+            
             else
-              cat > ~/deploy/.env.prod <<EOF
+              # .env.prod 작성
+              cat > .env.prod <<EOF
             DB_DIALECT=${DB_DIALECT}
             DB_DRIVER=${DB_DRIVER}
             DB_HOST=${DB_HOST}
@@ -129,25 +136,14 @@ jobs:
             REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_PROD }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET_PROD }}
             EOF
-              chmod 600 ~/deploy/.env.prod
-              cd ~/deploy
-              if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
-                  # 1. 최신 이미지 풀
-                  docker compose pull api_dev
-                  
-                  # 2. 마이그레이션 실행 (임시 컨테이너에서 alembic 실행)
-                  # --rm: 실행 후 컨테이너 자동 삭제, --env-file: 생성한 env 적용
-                  docker compose run --rm --env-file .env.dev api_dev alembic upgrade head
-                  
-                  # 3. 서비스 실행
-                  docker compose up -d --force-recreate api_dev
-                  docker compose restart nginx
-              else
-                  # prod 환경도 동일하게 적용
-                  docker compose pull api_prod
-                  docker compose run --rm --env-file .env.prod api_prod alembic upgrade head
-                  docker compose up -d --force-recreate api_prod
-                  docker compose restart nginx
-              fi
-            fi  
+              chmod 600 .env.prod
+
+              # 배포 및 마이그레이션 실행
+              docker compose pull api_prod
+              docker compose run --rm --env-file .env.prod api_prod alembic upgrade head
+              docker compose up -d --force-recreate api_prod
+            fi
+
+            # 3. 공통 후속 작업
+            docker compose restart nginx
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
