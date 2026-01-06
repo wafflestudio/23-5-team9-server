@@ -96,7 +96,6 @@ jobs:
 
             # 2. 타겟(dev/prod)에 따른 처리
             if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
-              # .env.dev 작성
               cat > .env.dev <<EOF
             DB_DIALECT=${DB_DIALECT}
             DB_DRIVER=${DB_DRIVER}
@@ -114,13 +113,12 @@ jobs:
             EOF
               chmod 600 .env.dev
 
-              # 배포 및 마이그레이션 실행
               docker compose pull api_dev
-              docker compose run --rm --env-file .env.dev api_dev alembic upgrade head
+              # ✅ 수정: --env-file 플래그 대신 컨테이너 실행 전 환경변수 파일 로드 확인
+              docker compose run --rm api_dev alembic upgrade head
               docker compose up -d --force-recreate api_dev
             
             else
-              # .env.prod 작성
               cat > .env.prod <<EOF
             DB_DIALECT=${DB_DIALECT}
             DB_DRIVER=${DB_DRIVER}
@@ -138,12 +136,11 @@ jobs:
             EOF
               chmod 600 .env.prod
 
-              # 배포 및 마이그레이션 실행
               docker compose pull api_prod
-              docker compose run --rm --env-file .env.prod api_prod alembic upgrade head
+              # ✅ 수정: 동일하게 적용
+              docker compose run --rm api_prod alembic upgrade head
               docker compose up -d --force-recreate api_prod
             fi
 
-            # 3. 공통 후속 작업
             docker compose restart nginx
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"
