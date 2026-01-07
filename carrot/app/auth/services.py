@@ -1,7 +1,13 @@
+import jose
+from jose import JoseError
 from typing import Annotated
 from datetime import datetime
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from authlib.jose.errors import JoseError
 
 from carrot.app.auth.utils import (
     verify_password,
@@ -80,3 +86,27 @@ class AuthService:
             new_user.id, "google", google_sub
         )
         return self._issue_token_by_id(new_user.id)
+    
+    async def get_current_user_from_token(token: str, db: AsyncSession) -> User:
+        try:
+            # 1. 기존에 만들어둔 함수를 사용하여 토큰 해독 및 검증
+            # AUTH_SETTINGS.ACCESS_TOKEN_SECRET를 인자로 전달합니다.
+            claims = verify_and_decode_token(token, AUTH_SETTINGS.ACCESS_TOKEN_SECRET)
+            
+            # 2. 검증된 claims에서 유저 식별자(sub) 추출
+            username: str = claims.get("sub")
+            if not username:
+                raise UnauthenticatedException()
+                
+        except (InvalidTokenException, JoseError):
+            # 검증 함수에서 발생한 예외나 Jose 관련 에러를 인증 예외로 변환
+            raise UnauthenticatedException()
+
+        # 3. DB에서 유저 조회 (비동기 방식)
+        result = await db.execute(select(User).where(User.email == username))
+        user = result.scalars().first()
+
+        if user is None:
+            raise UnauthenticatedException()
+            
+        return user
