@@ -113,10 +113,17 @@ jobs:
             EOF
               chmod 600 .env.dev
 
+              # 1. 최신 이미지 가져오기
               docker compose pull api_dev
-              # ✅ 수정: --env-file 플래그 대신 컨테이너 실행 전 환경변수 파일 로드 확인
+
+              # 2. DB 마이그레이션 실행 (임시 컨테이너)
               docker compose run --rm api_dev alembic upgrade head
-              docker compose up -d --force-recreate api_dev
+
+              # 3. ✅ 여기에 down 추가: 기존 컨테이너와 네트워크를 깔끔하게 정리
+              docker compose down api_dev
+
+              # 4. 새 컨테이너 실행
+              docker compose up -d api_dev
             
             else
               cat > .env.prod <<EOF
@@ -136,10 +143,17 @@ jobs:
             EOF
               chmod 600 .env.prod
 
+              # 1. 최신 이미지 가져오기
               docker compose pull api_prod
-              # ✅ 수정: 동일하게 적용
-              docker compose run --rm api_prod alembic upgrade head
-              docker compose up -d --force-recreate api_prod
+
+              # 2. DB 마이그레이션 실행 (임시 컨테이너)
+              docker compose run --rm api_dev alembic upgrade head
+
+              # 3. ✅ 여기에 down 추가: 기존 컨테이너와 네트워크를 깔끔하게 정리
+              docker compose down api_prod
+
+              # 4. 새 컨테이너 실행
+              docker compose up -d api_prod
             fi
 
             docker compose restart nginx
