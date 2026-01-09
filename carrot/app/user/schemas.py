@@ -54,12 +54,6 @@ class UserSignupRequest(BaseModel):
     email: Annotated[str, AfterValidator(validate_email)]
     password: Annotated[str, AfterValidator(validate_password)]
 
-    @field_validator("password", mode="after")
-    def validate_password(cls, v) -> str:
-        if len(v) < 8 or len(v) > 20:
-            raise InvalidFormatException()
-        return v
-
 
 class UserOnboardingRequest(BaseModel):
     nickname: Annotated[str, AfterValidator(validate_nickname)]
