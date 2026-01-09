@@ -60,7 +60,7 @@ def upgrade() -> None:
     sa.Column('like_count', sa.Integer(), nullable=False),
     sa.Column('category_id', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['category.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'category_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_product_category_id'), 'product', ['category_id'], unique=False)
     op.create_index(op.f('ix_product_id'), 'product', ['id'], unique=False)
@@ -82,7 +82,7 @@ def upgrade() -> None:
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('product_id', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['product_id'], ['product.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'product_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_chat_room_id'), 'chat_room', ['id'], unique=False)
     op.create_index(op.f('ix_chat_room_product_id'), 'chat_room', ['product_id'], unique=False)
@@ -102,7 +102,7 @@ def upgrade() -> None:
     sa.Column('like', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['product_id'], ['product.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'user_id', 'product_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_product_id'), 'user_product', ['id'], unique=False)
     op.create_index(op.f('ix_user_product_product_id'), 'user_product', ['product_id'], unique=False)
@@ -114,7 +114,7 @@ def upgrade() -> None:
     sa.Column('has_unread', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['chat_room_id'], ['chat_room.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'user_id', 'chat_room_id')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_chat_room_chat_room_id'), 'user_chat_room', ['chat_room_id'], unique=False)
     op.create_index(op.f('ix_user_chat_room_id'), 'user_chat_room', ['id'], unique=False)
