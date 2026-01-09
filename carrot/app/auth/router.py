@@ -66,7 +66,7 @@ async def get_redirect_url(request: Request):
     google_auth_url = auth_data.get("url")
     await google.save_authorize_data(request, **auth_data)
     # print(f"DEBUG SESSION: {request.session}")
-    return {"redirect_url": google_auth_url}
+    return RedirectResponse(google_auth_url)
 
 
 @auth_router.get("/oauth2/code/google")
