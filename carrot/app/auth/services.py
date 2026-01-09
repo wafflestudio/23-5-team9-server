@@ -1,5 +1,4 @@
-import jose
-from jose import JoseError
+from authlib.jose.errors import JoseError
 from typing import Annotated
 from datetime import datetime
 
