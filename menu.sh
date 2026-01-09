@@ -160,6 +160,15 @@ install_deps() {
     fi
 }
 
+# 지역 데이터 시딩
+seed_data() {
+    setup_env
+    source venv/bin/activate
+    check_deps
+    echo "Seeding regions..."
+    python3 seed_regions.py
+}
+
 # 메뉴 표시
 echo "====================================="
 echo "       Carrot Server Menu"
@@ -167,7 +176,8 @@ echo "====================================="
 echo "1. Run Server (Start DB if needed)"
 echo "2. Factory Reset (Remove DB & Run)"
 echo "3. Install Dependencies (uv sync)"
-echo "4. Exit"
+echo "4. Seed Regions"
+echo "5. Exit"
 echo "====================================="
 read -p "Select an option: " choice
 
@@ -175,6 +185,7 @@ case $choice in
     1) run_server ;;
     2) run_reset ;;
     3) install_deps ;;
-    4) exit 0 ;;
+    4) seed_data ;;
+    5) exit 0 ;;
     *) echo "Invalid option." ;;
 esac
