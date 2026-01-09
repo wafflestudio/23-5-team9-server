@@ -65,8 +65,24 @@ start_db() {
 
 # 환경 변수 설정 함수
 setup_env() {
+    # secrets.sh 로드 또는 생성
+    if [ -f "secrets.sh" ]; then
+        source secrets.sh
+    else
+        echo "Creating secrets.sh template..."
+        cat <<EOF > secrets.sh
+# Google Auth Secrets
+# This file is ignored by git.
+GOOGLE_CLIENT_ID=your_client_id_here
+GOOGLE_CLIENT_SECRET=your_client_secret_here
+EOF
+        echo "Warning: secrets.sh created with placeholders. Please update it."
+        GOOGLE_CLIENT_ID=your_client_id_here
+        GOOGLE_CLIENT_SECRET=your_client_secret_here
+    fi
+
     if [ ! -f .env.local ]; then
-        echo "Creating .env.local..."
+        echo "Creating .env.local using secrets..."
         cat <<INNEREOF > .env.local
 # === Database ===
 DB_DIALECT=mysql
@@ -77,9 +93,9 @@ DB_USER=user
 DB_PASSWORD=password
 DB_DATABASE=carrot_db
 
-# === Auth (Dummy Values for Dev) ===
-GOOGLE_CLIENT_ID=dummy_id
-GOOGLE_CLIENT_SECRET=dummy_secret
+# === Auth (Dev Values) ===
+GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
 FRONTEND_URL=http://localhost:5173
 ACCESS_TOKEN_SECRET=dev_access_secret
 REFRESH_TOKEN_SECRET=dev_refresh_secret
@@ -105,6 +121,10 @@ check_deps() {
     if ! python3 -c "import aiomysql" 2>/dev/null; then
         echo "Installing aiomysql..."
         pip install aiomysql
+    fi
+    if ! python3 -c "import httpx" 2>/dev/null; then
+        echo "Installing httpx..."
+        pip install httpx
     fi
 }
 
@@ -165,6 +185,12 @@ seed_data() {
     setup_env
     source venv/bin/activate
     check_deps
+    
+    # DB가 켜져 있는지 확인하고 시딩 전 마이그레이션 실행
+    start_db
+    echo "Running migrations before seeding..."
+    alembic upgrade head
+    
     echo "Seeding regions..."
     python3 seed_regions.py
 }

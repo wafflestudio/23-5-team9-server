@@ -142,4 +142,7 @@ sonarqube/extensions
 sonarqube/data
 sonarqube/logs
 
-.terraform
+.terraformsecrets.sh
+
+
+secrets.sh
