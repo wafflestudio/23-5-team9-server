@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -18,9 +19,14 @@ from carrot.app.auth.exceptions import (
 )
 
 
-def verify_password(plain_password: str, hashed_password: str) -> None:
+async def verify_password(plain_password: str, hashed_password: str) -> None:
     try:
-        argon2.PasswordHasher().verify(hashed_password, plain_password)
+        # 별도의 스레드에서 실행하여 이벤트 루프 블로킹 방지
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            None, 
+            lambda: argon2.PasswordHasher().verify(hashed_password, plain_password)
+        )
     except argon2.exceptions.VerifyMismatchError:
         raise InvalidAccountException()
 

@@ -1,15 +1,19 @@
 from typing import Annotated
+from unittest import result
 
 from fastapi import Depends
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from carrot.app.user.models import LocalAccount, SocialAccount, User
 from carrot.db.connection import get_db_session
 
 
 class UserRepository:
-    def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
+    def __init__(
+        self, session: Annotated[AsyncSession, Depends(get_db_session)]
+    ) -> None:
         self.session = session
 
     async def create_user(self, email: str) -> User:
@@ -24,28 +28,41 @@ class UserRepository:
         return merged
 
     async def get_user_by_id(self, user_id: str) -> User | None:
-        result = await self.session.execute(select(User).where(User.id == user_id))
-        return result.scalar_one_or_none()
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.region),  # 유저의 동네 정보 (Region 모델)
+                selectinload(User.local_account),  # 유저의 로컬 계정 정보 (비밀번호 등)
+                selectinload(User.social_account),  # 유저의 소셜 계정 정보 (구글 등)
+            )
+            .where(User.id == user_id)
+        )
+        return await self.session.scalar(stmt)
 
     async def get_user_by_email(self, email: str) -> User | None:
-        result = await self.session.execute(select(User).where(User.email == email))
-        return result.scalar_one_or_none()
+        return await self.session.scalar(
+            select(User)
+            .options(selectinload(User.local_account))
+            .where(User.email == email)
+        )
 
     async def get_user_by_nickname(self, nickname: str) -> User | None:
-        result = await self.session.execute(select(User).where(User.nickname == nickname))
-        return result.scalar_one_or_none()
+        return await self.session.scalar(select(User).where(User.nickname == nickname))
 
     async def get_social_account_by_provider(
         self, provider: str, sub: str
     ) -> SocialAccount | None:
-        stmt = select(SocialAccount).where(
-            and_(
-                SocialAccount.provider == provider,
-                SocialAccount.provider_sub == sub,
+        stmt = (
+            select(SocialAccount)
+            .options(selectinload(SocialAccount.user))
+            .where(
+                and_(
+                    SocialAccount.provider == provider,
+                    SocialAccount.provider_sub == sub,
+                )
             )
         )
-        result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self.session.scalar(stmt)
 
     async def create_social_account(
         self, user_id: str, provider: str, provider_sub: str
@@ -58,12 +75,13 @@ class UserRepository:
         return social_account
 
     async def get_local_account_by_id(self, user_id: str) -> LocalAccount | None:
-        result = await self.session.execute(
+        return await self.session.scalar(
             select(LocalAccount).where(LocalAccount.user_id == user_id)
         )
-        return result.scalar_one_or_none()
 
-    async def create_local_account(self, user_id: str, hashed_password: str) -> LocalAccount:
+    async def create_local_account(
+        self, user_id: str, hashed_password: str
+    ) -> LocalAccount:
         local_account = LocalAccount(user_id=user_id, hashed_password=hashed_password)
         self.session.add(local_account)
         await self.session.flush()
