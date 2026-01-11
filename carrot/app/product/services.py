@@ -1,0 +1,53 @@
+from typing import Annotated
+
+from fastapi import Depends
+
+from carrot.app.user.schemas import UserOnboardingRequest, UserUpdateRequest
+from carrot.app.product.models import Product, UserProduct
+from carrot.app.product.repositories import ProductRepository
+from carrot.app.product.exceptions import NotYourProductException, InvalidProductIDException
+from carrot.common.exceptions import InvalidFormatException
+
+class ProductService:
+    def __init__(self, product_repository: Annotated[ProductRepository, Depends()]) -> None:
+        self.repository = product_repository
+
+    async def create_post(self, user_id: str, title: str, content: str, price: int, category_id: str) -> Product:
+        product = Product(
+            owner_id = user_id,
+            title = title,
+            content = content,
+            price = price,
+            like_count = 0,
+            category_id = category_id,
+        )
+        
+        new = await self.repository.create_post(product)
+        return new
+
+    async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str) -> Product:
+        product = await self.repository.get_post_by_id(id)
+        if product is None:
+            raise InvalidProductIDException
+        
+        if user_id != product.owner_id:
+            raise NotYourProductException
+        if title is not None:
+            product.title = title
+        if content is not None:
+            product.content = content
+        if price is not None:
+            product.price = price
+        if category_id is not None:
+            product.category_id = category_id
+        
+        updated = await self.repository.update_post(product)
+        return updated
+
+    async def remove_post(self, id: str):
+        product = await self.repository.get_post_by_id(id)
+        if product is None:
+            raise InvalidProductIDException
+        
+        await self.repository.remove_post(product)
+        return product
