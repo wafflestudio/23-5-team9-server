@@ -1,6 +1,6 @@
 services:
   api_prod:
-    image: ghcr.io/wafflestudio/23-5-team9-server:prod   # 예: main 브랜치 빌드 태그
+    image: ghcr.io/wafflestudio/23-5-team9-server:prod
     container_name: api_prod
     env_file:
       - .env.prod
@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
 
   api_dev:
-    image: ghcr.io/wafflestudio/23-5-team9-server:dev   # 예: dev 브랜치 빌드 태그
+    image: ghcr.io/wafflestudio/23-5-team9-server:dev
     container_name: api_dev
     env_file:
       - .env.dev
