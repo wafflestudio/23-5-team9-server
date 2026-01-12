@@ -72,7 +72,6 @@ class UserUpdateRequest(BaseModel):
     nickname: Annotated[str | None, AfterValidator(skip_none(validate_nickname))] = None
     region_id: str | None = None
     profile_image: str | None = None
-    coin: Annotated[int | None, AfterValidator(skip_none(validate_coin))] = None
 
 
 class UserResponse(BaseModel):
