@@ -41,6 +41,11 @@ class User(Base):
         "SocialAccount", back_populates="user"
     )
 
+    sent_ledgers: Mapped["Ledger"] = relationship("Ledger", foreign_keys="[Ledger.user_id]", back_populates="user")
+    received_ledgers: Mapped["Ledger"] = relationship(
+        "Ledger", foreign_keys="[Ledger.receive_user_id]", back_populates="receive_user"
+    )
+
 
 class LocalAccount(Base):
     __tablename__ = "local_account"
