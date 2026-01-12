@@ -28,7 +28,7 @@ app.add_middleware(
     https_only=https_only,
 )
 
-origins = [AUTH_SETTINGS.FRONTEND_URL.strip()]
+origins = [AUTH_SETTINGS.ALLOW_ORIGIN.strip()]
 
 app.add_middleware(
     CORSMiddleware,
