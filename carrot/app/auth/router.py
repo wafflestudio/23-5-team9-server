@@ -9,6 +9,7 @@ from authlib.integrations.starlette_client import OAuth, OAuthError, StarletteOA
 from carrot.app.auth.schemas import TokenResponse, UserSigninRequest
 from carrot.app.auth.services import AuthService
 from carrot.app.auth.settings import AUTH_SETTINGS
+from carrot.settings import SETTINGS
 
 auth_router = APIRouter()
 
@@ -59,9 +60,18 @@ oauth.register(
 google: StarletteOAuth2App = oauth.create_client("google")  # type: ignore
 
 
+def get_redirect_uri(request: Request) -> str:
+    uri_obj = request.url_for("receive_code")
+
+    if not SETTINGS.is_local:
+        uri_obj = uri_obj.replace(scheme="https")  # nginx changes scheme to https
+
+    return str(uri_obj)
+
+
 @auth_router.get("/oauth2/login/google", status_code=status.HTTP_200_OK)
 async def get_redirect_url(request: Request):
-    redirect_uri = str(request.url_for("receive_code"))
+    redirect_uri = get_redirect_uri(request)
     auth_data = await google.create_authorization_url(redirect_uri)
     google_auth_url = auth_data.get("url")
     await google.save_authorize_data(request, **auth_data)
@@ -74,7 +84,7 @@ async def receive_code(
     request: Request,
     auth_service: Annotated[AuthService, Depends()],
 ):
-    redirect_uri = str(request.url_for("receive_code"))
+    redirect_uri = get_redirect_uri(request)
 
     try:
         token = await google.authorize_access_token(request, redirect_uri=redirect_uri)
