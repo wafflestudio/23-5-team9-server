@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from carrot.app.pay.models import Ledger, TransactionType
 from carrot.app.user.schemas import PublicUserResponse, UserResponse
@@ -8,7 +8,7 @@ from carrot.app.user.schemas import PublicUserResponse, UserResponse
 class BalanceRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    amount: int
+    amount: int = Field(gt=0)
     description: str
 
 

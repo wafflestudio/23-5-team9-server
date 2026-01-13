@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from carrot.app.pay.exceptions import CoinLackException, ReceiverNotFoundException
 from carrot.app.pay.models import Ledger
@@ -28,7 +28,7 @@ class PayService:
                 transaction_type=TransactionType.DEPOSIT,
                 amount=amount,
                 description=description,
-                time=datetime.now(),
+                time=datetime.now(timezone.utc),
                 user_id=user.id,
                 receive_user_id=None,
             )
@@ -47,7 +47,7 @@ class PayService:
                 transaction_type=TransactionType.WITHDRAW,
                 amount=amount,
                 description=description,
-                time=datetime.now(),
+                time=datetime.now(timezone.utc),
                 user_id=user.id,
                 receive_user_id=None,
             )
@@ -64,6 +64,21 @@ class PayService:
             await self.user_repository.update_user(locked_user)
             return ledger
 
+    async def get_2_users_for_update(
+        self, user_id1: str, user_id2: str
+    ) -> tuple[User | None, User | None]:
+        # consistent locking order to prevent deadlock
+        # returns the users in the order of arguments given, not in the arguments in which locks were called
+
+        if user_id1 < user_id2:
+            user1 = await self.user_repository.get_user_for_update(user_id1)
+            user2 = await self.user_repository.get_user_for_update(user_id2)
+        else:
+            user2 = await self.user_repository.get_user_for_update(user_id2)
+            user1 = await self.user_repository.get_user_for_update(user_id1)
+
+        return (user1, user2)
+
     async def transfer(
         self, amount: int, description: str, receive_user_id: str, send_user: User
     ) -> Ledger:
@@ -72,23 +87,25 @@ class PayService:
                 transaction_type=TransactionType.TRANSFER,
                 amount=amount,
                 description=description,
-                time=datetime.now(),
+                time=datetime.now(timezone.utc),
                 user_id=send_user.id,
                 receive_user_id=receive_user_id,
             )
             await self.pay_repository.add_ledger(ledger)
 
-            send_user_locked = await self.user_repository.get_user_for_update(
-                send_user.id
+            if receive_user_id == send_user.id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Cannot transfer to self",
+                )
+
+            receive_user_locked, send_user_locked = await self.get_2_users_for_update(
+                receive_user_id, send_user.id
             )
             if not send_user_locked:
                 raise RuntimeError(
                     f"User {send_user.id} disappeared during transaction."
                 )
-
-            receive_user_locked = await self.user_repository.get_user_for_update(
-                receive_user_id
-            )
             if not receive_user_locked:
                 raise ReceiverNotFoundException()
 
