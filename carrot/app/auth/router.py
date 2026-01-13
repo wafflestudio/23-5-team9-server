@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, logger, status
 from fastapi.responses import RedirectResponse
 from starlette.requests import Request
 
@@ -69,14 +69,23 @@ def get_redirect_uri(request: Request) -> str:
     return str(uri_obj)
 
 
-@auth_router.get("/oauth2/login/google", status_code=status.HTTP_200_OK)
+@auth_router.get("/oauth2/login/google", status_code=status.HTTP_307_TEMPORARY_REDIRECT)
 async def get_redirect_url(request: Request):
     redirect_uri = get_redirect_uri(request)
     auth_data = await google.create_authorization_url(redirect_uri)
     google_auth_url = auth_data.get("url")
+
+    if google_auth_url is None:
+        logger.logger.error("Google OAuth URL generation failed: URL is None")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="구글 로그인 초기화에 실패했습니다.",
+        )
+
     await google.save_authorize_data(request, **auth_data)
     # print(f"DEBUG SESSION: {request.session}")
-    return {"redirect_url": google_auth_url}
+    return RedirectResponse(google_auth_url)
+    # return {"redirect_url": google_auth_url}
 
 
 @auth_router.get("/oauth2/code/google")
