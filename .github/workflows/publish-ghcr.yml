@@ -72,6 +72,7 @@ jobs:
               AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_DEV }}"
               RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_DEV }}"
               SESS_SECRET="${{ secrets.SESSION_SECRET_DEV }}"
+              ENV_VAR="dev"
             else
               ENV_FILE=".env.prod"
               DB_USER="${{ secrets.DB_USER_PROD }}"
@@ -81,9 +82,11 @@ jobs:
               AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_PROD }}"
               RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_PROD }}"
               SESS_SECRET="${{ secrets.SESSION_SECRET_PROD }}"
+              ENV_VAR="prod"
             fi
 
             cat > $ENV_FILE <<EOF
+            ENV=$ENV_VAR
             DB_DIALECT=${{ secrets.DB_DIALECT }}
             DB_DRIVER=${{ secrets.DB_DRIVER }}
             DB_HOST=${{ secrets.DB_HOST }}
