@@ -18,32 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install uv
-        run: |
-          python -m pip install -U pip
-          pip install uv
-
-      # - name: Check requirements.txt is up to date
-      #   shell: bash
-      #   run: |
-      #     set -euo pipefail
-      #     OUT="/tmp/requirements.txt.generated"
-      #     uv export --format requirements-txt --locked --no-dev --no-hashes -o "$OUT"
-      #     if ! diff -u requirements.txt "$OUT"; then
-      #       echo ""
-      #       echo "❌ requirements.txt가 최신이 아닙니다."
-      #       echo "아래를 로컬에서 실행한 뒤 변경된 requirements.txt를 커밋하세요:"
-      #       echo ""
-      #       echo "   make reqs"
-      #       echo ""
-      #       exit 1
-      #     fi
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -75,7 +49,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Write env file(s) on EC2 and restart target service
+      - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -86,75 +60,55 @@ jobs:
             mkdir -p ~/deploy
             cd ~/deploy
 
-            # 1. 공통 환경 변수 설정
-            DB_DIALECT="${{ secrets.DB_DIALECT }}"
-            DB_DRIVER="${{ secrets.DB_DRIVER }}"
-            DB_HOST="${{ secrets.DB_HOST }}"
-            DB_PORT="${{ secrets.DB_PORT }}"
-            GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
-            GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
-
-            # 2. 타겟(dev/prod)에 따른 처리
-            if [ "${{ steps.meta.outputs.target }}" = "dev" ]; then
-              cat > .env.dev <<EOF
-            DB_DIALECT=${DB_DIALECT}
-            DB_DRIVER=${DB_DRIVER}
-            DB_HOST=${DB_HOST}
-            DB_PORT=${DB_PORT}
-            DB_USER=${{ secrets.DB_USER_DEV }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD_DEV }}
-            DB_DATABASE=${{ secrets.DB_DATABASE_DEV }}
-            GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-            GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL_DEV }}
-            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET_DEV }}
-            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_DEV }}
-            SESSION_SECRET=${{ secrets.SESSION_SECRET_DEV }}
-            EOF
-              chmod 600 .env.dev
-
-              # 1. 최신 이미지 가져오기
-              docker compose pull api_dev
-
-              # 2. DB 마이그레이션 실행 (임시 컨테이너)
-              docker compose run --rm api_dev alembic upgrade head
-
-              # 3. ✅ 여기에 down 추가: 기존 컨테이너와 네트워크를 깔끔하게 정리
-              docker compose down api_dev
-
-              # 4. 새 컨테이너 실행
-              docker compose up -d api_dev
+            TARGET="${{ steps.meta.outputs.target }}"
             
+            # 환경 변수 파일 생성
+            if [ "$TARGET" = "dev" ]; then
+              ENV_FILE=".env.dev"
+              DB_USER="${{ secrets.DB_USER_DEV }}"
+              DB_PASS="${{ secrets.DB_PASSWORD_DEV }}"
+              DB_NAME="${{ secrets.DB_DATABASE_DEV }}"
+              FRONT_URL="${{ secrets.FRONTEND_URL_DEV }}"
+              AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_DEV }}"
+              RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_DEV }}"
+              SESS_SECRET="${{ secrets.SESSION_SECRET_DEV }}"
+              ENV_VAR="dev"
             else
-              cat > .env.prod <<EOF
-            DB_DIALECT=${DB_DIALECT}
-            DB_DRIVER=${DB_DRIVER}
-            DB_HOST=${DB_HOST}
-            DB_PORT=${DB_PORT}
-            DB_USER=${{ secrets.DB_USER_PROD }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }}
-            DB_DATABASE=${{ secrets.DB_DATABASE_PROD }}
-            GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-            GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL_PROD }}
-            ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET_PROD }}
-            REFRESH_TOKEN_SECRET=${{ secrets.REFRESH_TOKEN_SECRET_PROD }}
-            SESSION_SECRET=${{ secrets.SESSION_SECRET_PROD }}
-            EOF
-              chmod 600 .env.prod
-
-              # 1. 최신 이미지 가져오기
-              docker compose pull api_prod
-
-              # 2. DB 마이그레이션 실행 (임시 컨테이너)
-              docker compose run --rm api_dev alembic upgrade head
-
-              # 3. ✅ 여기에 down 추가: 기존 컨테이너와 네트워크를 깔끔하게 정리
-              docker compose down api_prod
-
-              # 4. 새 컨테이너 실행
-              docker compose up -d api_prod
+              ENV_FILE=".env.prod"
+              DB_USER="${{ secrets.DB_USER_PROD }}"
+              DB_PASS="${{ secrets.DB_PASSWORD_PROD }}"
+              DB_NAME="${{ secrets.DB_DATABASE_PROD }}"
+              FRONT_URL="${{ secrets.FRONTEND_URL_PROD }}"
+              AT_SECRET="${{ secrets.ACCESS_TOKEN_SECRET_PROD }}"
+              RT_SECRET="${{ secrets.REFRESH_TOKEN_SECRET_PROD }}"
+              SESS_SECRET="${{ secrets.SESSION_SECRET_PROD }}"
+              ENV_VAR="prod"
             fi
 
+            cat > $ENV_FILE <<EOF
+            ENV=$ENV_VAR
+            DB_DIALECT=${{ secrets.DB_DIALECT }}
+            DB_DRIVER=${{ secrets.DB_DRIVER }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=$DB_USER
+            DB_PASSWORD=$DB_PASS
+            DB_DATABASE=$DB_NAME
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            FRONTEND_URL=$FRONT_URL
+            ACCESS_TOKEN_SECRET=$AT_SECRET
+            REFRESH_TOKEN_SECRET=$RT_SECRET
+            SESSION_SECRET=$SESS_SECRET
+            EOF
+            chmod 600 $ENV_FILE
+
+            # 서비스 갱신
+            SERVICE_NAME="api_$TARGET"
+            docker compose pull $SERVICE_NAME
+            docker compose run --rm $SERVICE_NAME alembic upgrade head
+            docker compose up -d $SERVICE_NAME
+            
+            # Nginx 재시작 (설정 반영)
             docker compose restart nginx
             docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}"

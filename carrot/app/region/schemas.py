@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class RegionResponse(BaseModel):
     id: str
     name: str

@@ -11,3 +11,4 @@ api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
 api_router.include_router(user_router, prefix="/user", tags=["user"])
 api_router.include_router(chat_router, prefix="/chat", tags=["chat"])
 # api_router.include_router(chat_ws_router, prefix="/ws", tags=["chat"])
+
