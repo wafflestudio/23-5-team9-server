@@ -18,7 +18,6 @@ class ProductService:
             title = title,
             content = content,
             price = price,
-            like_count = 0,
             category_id = category_id,
         )
         
@@ -43,7 +42,14 @@ class ProductService:
         
         updated = await self.repository.update_post(product)
         return updated
-
+    
+    async def view_post(self, id: str):
+        product = await self.repository.get_post_by_id(id)
+        if product is None:
+            raise InvalidProductIDException
+        
+        return product
+    
     async def remove_post(self, id: str):
         product = await self.repository.get_post_by_id(id)
         if product is None:

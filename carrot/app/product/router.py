@@ -8,6 +8,7 @@ from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.schemas import (
     ProductPostRequest,
     ProductPatchRequest,
+    ProductViewRequest,
     ProductDeleteRequest,
     ProductResponse,
 )
@@ -44,6 +45,18 @@ async def update_post(
         request.content,
         request.price,
         request.category_id,
+    )
+    return ProductResponse.model_validate(product)
+
+@product_router.get("/me", status_code=200, response_model=ProductResponse)
+async def view_post(
+    user: Annotated[User, Depends(login_with_header)],
+    request: ProductViewRequest,
+    service: Annotated[ProductService, Depends()],
+) -> ProductResponse:
+    product = await service.view_post(
+        user.id,
+        request.id,
     )
     return ProductResponse.model_validate(product)
 
