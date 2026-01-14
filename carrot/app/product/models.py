@@ -16,7 +16,7 @@ class Product(Base):
     like_count: Mapped[int] = mapped_column(Integer, nullable=False)
     category_id: Mapped[str] = mapped_column(String(36), ForeignKey("category.id", ondelete="CASCADE"), primary_key=True, index=True)
 
-    category: Mapped[Category] = relationship("Cagetory")
+    category: Mapped[Category] = relationship("Category")
     
 class UserProduct(Base):
     __tablename__ = "user_product"

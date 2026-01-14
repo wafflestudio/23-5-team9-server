@@ -1,56 +1,54 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
-# --- 메시지 관련 스키마 ---
+# 메시지 전송 요청
+class MessageCreate(BaseModel):
+    content: str
 
-class ChatMessageResponse(BaseModel):
+# 메시지 응답 형식
+class MessageRead(BaseModel):
     id: int
     room_id: str
-    sender_id: int
-    sender_nickname: str
+    sender_id: str
     content: str
+    created_at: datetime
     is_read: bool
-    created_at: datetime
 
     class Config:
         from_attributes = True
 
-
-# --- 채팅방 관련 스키마 ---
-
-class ChatRoomCreate(BaseModel):
-    """새로운 채팅방을 만들 때 필요한 정보 (예: 상품 ID 등)"""
-    product_id: Optional[int] = None
-    receiver_id: int  # 대화 상대방 ID
-
-
-class ChatRoomResponse(BaseModel):
-    """채팅방 생성 시 기본 반환 정보"""
+# 채팅방 정보 응답
+class ChatRoomRead(BaseModel):
     id: str
+    user_one_id: str
+    user_two_id: str
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-
-class ChatRoomListResponse(BaseModel):
-    """채팅 목록 페이지에서 보여줄 정보 (핵심!)"""
+# 내 채팅방 목록 조회 응답 (리스트 화면용)
+class ChatRoomListRead(BaseModel):
     room_id: str
-    opponent_nickname: str  # 상대방 이름
-    opponent_profile_img: Optional[str] = None
-    
-    # 실시간 업데이트를 위한 데이터
-    last_message: Optional[str] = Field(None, description="마지막 메시지 내용")
-    last_message_at: Optional[datetime] = Field(None, description="마지막 메시지 시간")
-    unread_count: int = Field(0, description="읽지 않은 메시지 개수")
+    opponent_id: str
+    opponent_nickname: Optional[str] = None      # 상대방 닉네임 (선택사항)
+    opponent_profile_image: Optional[str] = None # 상대방 프로필 이미지 (선택사항)
+    last_message: Optional[str] = None           # 마지막 메시지 내용
+    last_message_at: Optional[datetime] = None   # 마지막 메시지 시간
+    unread_count: int = 0                        # 안 읽은 메시지 수
 
     class Config:
         from_attributes = True
 
+# 상대방 상태 확인 응답
+class OpponentStatus(BaseModel):
+    user_id: str
+    nickname: Optional[str] = None
+    profile_image: Optional[str] = None
+    # 'status'는 기존 User 모델의 UserStatus Enum을 사용하거나 문자열로 처리
+    status: str                                  
+    last_active_at: Optional[datetime] = None    # 마지막 활동 시간 (필요 시)
 
-# --- 웹소켓 메시지 전송 규격 ---
-
-class ChatMessageCreate(BaseModel):
-    """웹소켓을 통해 클라이언트가 보내는 데이터 형식"""
-    message: str
+    class Config:
+        from_attributes = True
