@@ -7,19 +7,28 @@ from starlette.middleware.sessions import SessionMiddleware
 from carrot.api import api_router
 from carrot.common.exceptions import CarrotException, MissingRequiredFieldException
 from carrot.app.auth.settings import AUTH_SETTINGS
+from carrot.settings import SETTINGS
 
 app = FastAPI()
 
 # add session middleware (this is used internally by starlette to execute the authorization flow)
+
+if SETTINGS.is_local:
+    same_site = "lax"
+    https_only = False
+else:
+    same_site = "none"
+    https_only = True
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=AUTH_SETTINGS.SESSION_SECRET,
     max_age=60 * 60,  # one hour, in seconds
-    same_site="lax",
-    https_only=False,
+    same_site=same_site,
+    https_only=https_only,
 )
 
-origins = [AUTH_SETTINGS.FRONTEND_URL.strip()]
+origins = [AUTH_SETTINGS.ALLOW_ORIGIN.strip()]
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,8 +1,8 @@
-"""empty message
+"""Initial migration
 
-Revision ID: 4c9ffeff6c6a
-Revises: b753fe10f516
-Create Date: 2026-01-04 13:26:08.710703
+Revision ID: 4ee234d4a968
+Revises: 
+Create Date: 2026-01-14 14:34:58.256738
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '4c9ffeff6c6a'
-down_revision: Union[str, Sequence[str], None] = 'b753fe10f516'
+revision: str = '4ee234d4a968'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -40,18 +40,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_region_id'), 'region', ['id'], unique=False)
     op.create_index(op.f('ix_region_name'), 'region', ['name'], unique=True)
-    op.create_table('chat_message',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('time', sa.String(length=20), nullable=False),
-    sa.Column('message', sa.String(length=500), nullable=False),
-    sa.Column('sender', sa.String(length=36), nullable=False),
-    sa.Column('read_count', sa.Integer(), nullable=False),
-    sa.Column('chatroom_id', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['chatroom_id'], ['category.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'chatroom_id')
-    )
-    op.create_index(op.f('ix_chat_message_chatroom_id'), 'chat_message', ['chatroom_id'], unique=False)
-    op.create_index(op.f('ix_chat_message_id'), 'chat_message', ['id'], unique=False)
     op.create_table('product',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('title', sa.String(length=20), nullable=False),
@@ -67,11 +55,11 @@ def upgrade() -> None:
     op.create_table('user',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('email', sa.String(length=60), nullable=False),
-    sa.Column('password', sa.String(length=20), nullable=False),
-    sa.Column('nickname', sa.String(length=20), nullable=False),
+    sa.Column('nickname', sa.String(length=20), nullable=True),
     sa.Column('profile_image', sa.String(length=150), nullable=True),
     sa.Column('coin', sa.Integer(), nullable=False),
-    sa.Column('region_id', sa.String(length=36), nullable=False),
+    sa.Column('region_id', sa.String(length=36), nullable=True),
+    sa.Column('status', sa.Enum('PENDING', 'ACTIVE', name='userstatus'), nullable=False),
     sa.ForeignKeyConstraint(['region_id'], ['region.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -80,21 +68,30 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_region_id'), 'user', ['region_id'], unique=False)
     op.create_table('chat_room',
     sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('product_id', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['product_id'], ['product.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'product_id')
+    sa.Column('user_one_id', sa.String(length=36), nullable=False),
+    sa.Column('user_two_id', sa.String(length=36), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['user_one_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['user_two_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_chat_room_id'), 'chat_room', ['id'], unique=False)
-    op.create_index(op.f('ix_chat_room_product_id'), 'chat_room', ['product_id'], unique=False)
+    op.create_index(op.f('ix_chat_room_user_one_id'), 'chat_room', ['user_one_id'], unique=False)
+    op.create_index(op.f('ix_chat_room_user_two_id'), 'chat_room', ['user_two_id'], unique=False)
+    op.create_table('local_account',
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('hashed_password', sa.String(length=100), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('user_id')
+    )
     op.create_table('social_account',
-    sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('provider', sa.String(length=20), nullable=False),
     sa.Column('provider_sub', sa.String(length=256), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('user_id')
     )
-    op.create_index(op.f('ix_social_account_id'), 'social_account', ['id'], unique=False)
     op.create_table('user_product',
     sa.Column('id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
@@ -107,35 +104,36 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_product_id'), 'user_product', ['id'], unique=False)
     op.create_index(op.f('ix_user_product_product_id'), 'user_product', ['product_id'], unique=False)
     op.create_index(op.f('ix_user_product_user_id'), 'user_product', ['user_id'], unique=False)
-    op.create_table('user_chat_room',
-    sa.Column('id', sa.String(length=36), nullable=False),
-    sa.Column('user_id', sa.String(length=36), nullable=False),
-    sa.Column('chat_room_id', sa.String(length=36), nullable=False),
-    sa.Column('has_unread', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['chat_room_id'], ['chat_room.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id', 'user_id', 'chat_room_id')
+    op.create_table('chat_message',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('room_id', sa.String(length=36), nullable=False),
+    sa.Column('sender_id', sa.String(length=36), nullable=False),
+    sa.Column('content', sa.Text(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('is_read', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['room_id'], ['chat_room.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['sender_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_user_chat_room_chat_room_id'), 'user_chat_room', ['chat_room_id'], unique=False)
-    op.create_index(op.f('ix_user_chat_room_id'), 'user_chat_room', ['id'], unique=False)
-    op.create_index(op.f('ix_user_chat_room_user_id'), 'user_chat_room', ['user_id'], unique=False)
+    op.create_index(op.f('ix_chat_message_created_at'), 'chat_message', ['created_at'], unique=False)
+    op.create_index(op.f('ix_chat_message_room_id'), 'chat_message', ['room_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_user_chat_room_user_id'), table_name='user_chat_room')
-    op.drop_index(op.f('ix_user_chat_room_id'), table_name='user_chat_room')
-    op.drop_index(op.f('ix_user_chat_room_chat_room_id'), table_name='user_chat_room')
-    op.drop_table('user_chat_room')
+    op.drop_index(op.f('ix_chat_message_room_id'), table_name='chat_message')
+    op.drop_index(op.f('ix_chat_message_created_at'), table_name='chat_message')
+    op.drop_table('chat_message')
     op.drop_index(op.f('ix_user_product_user_id'), table_name='user_product')
     op.drop_index(op.f('ix_user_product_product_id'), table_name='user_product')
     op.drop_index(op.f('ix_user_product_id'), table_name='user_product')
     op.drop_table('user_product')
-    op.drop_index(op.f('ix_social_account_id'), table_name='social_account')
     op.drop_table('social_account')
-    op.drop_index(op.f('ix_chat_room_product_id'), table_name='chat_room')
+    op.drop_table('local_account')
+    op.drop_index(op.f('ix_chat_room_user_two_id'), table_name='chat_room')
+    op.drop_index(op.f('ix_chat_room_user_one_id'), table_name='chat_room')
     op.drop_index(op.f('ix_chat_room_id'), table_name='chat_room')
     op.drop_table('chat_room')
     op.drop_index(op.f('ix_user_region_id'), table_name='user')
@@ -145,9 +143,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_product_id'), table_name='product')
     op.drop_index(op.f('ix_product_category_id'), table_name='product')
     op.drop_table('product')
-    op.drop_index(op.f('ix_chat_message_id'), table_name='chat_message')
-    op.drop_index(op.f('ix_chat_message_chatroom_id'), table_name='chat_message')
-    op.drop_table('chat_message')
     op.drop_index(op.f('ix_region_name'), table_name='region')
     op.drop_index(op.f('ix_region_id'), table_name='region')
     op.drop_table('region')

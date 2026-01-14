@@ -10,13 +10,14 @@ class Product(Base):
     __tablename__ = "product"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    title: Mapped[str] = mapped_column(String(20))
-    content: Mapped[str] = mapped_column(String(500))
+    owner_id:  Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), primary_key=True, index=True)
+    title: Mapped[str] = mapped_column(String(50))
+    content: Mapped[str | None] = mapped_column(String(500))
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False)
     category_id: Mapped[str] = mapped_column(String(36), ForeignKey("category.id", ondelete="CASCADE"), primary_key=True, index=True)
 
-    category: Mapped[Category] = relationship("Cagetory")
+    category: Mapped[Category] = relationship("Category")
     
 class UserProduct(Base):
     __tablename__ = "user_product"
