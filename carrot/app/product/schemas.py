@@ -53,6 +53,7 @@ class ProductPatchRequest(BaseModel):
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[str, AfterValidator(validate_price)]
     category_id: str
+    is_sold: bool
     
 class ProductDeleteRequest(BaseModel):
     id: str 
@@ -65,6 +66,7 @@ class ProductResponse(BaseModel):
     price: int
     like_count: int
     catetory: str
+    is_sold: bool
 
     class Config:
         from_attributes = True

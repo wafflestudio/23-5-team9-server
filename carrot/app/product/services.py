@@ -18,7 +18,6 @@ class ProductService:
             title = title,
             content = content,
             price = price,
-            like_count = 0,
             category_id = category_id,
         )
         
