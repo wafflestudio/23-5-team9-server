@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from carrot.app.user.schemas import UserOnboardingRequest, UserUpdateRequest
 from carrot.app.image.models import ProductImage, UserImage
-from carrpt.app.image.repositories import ImageRepository
+from carrot.app.image.repositories import ImageRepository
 from carrot.common.exceptions import InvalidFormatException
 
 class ImageService:
