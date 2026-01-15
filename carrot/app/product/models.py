@@ -5,6 +5,7 @@ from carrot.db.common import Base
 
 from carrot.app.user.models import User
 from carrot.app.category.models import Category
+from carrot.app.image.models import ProductImage
 
 class Product(Base):
     __tablename__ = "product"
@@ -12,6 +13,7 @@ class Product(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     owner_id:  Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(50))
+    images: Mapped[list["ProductImage"]] = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
     content: Mapped[str | None] = mapped_column(String(500))
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, default=0)

@@ -12,10 +12,11 @@ class ProductService:
     def __init__(self, product_repository: Annotated[ProductRepository, Depends()]) -> None:
         self.repository = product_repository
 
-    async def create_post(self, user_id: str, title: str, content: str, price: int, category_id: str) -> Product:
+    async def create_post(self, user_id: str, title: str, images: list, content: str, price: int, category_id: str) -> Product:
         product = Product(
             owner_id = user_id,
             title = title,
+            images = images,
             content = content,
             price = price,
             category_id = category_id,
@@ -24,7 +25,7 @@ class ProductService:
         new = await self.repository.create_post(product)
         return new
 
-    async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str) -> Product:
+    async def update_post(self, user_id: str, id: str, title: str, images: list, content: str, price: int, category_id: str) -> Product:
         product = await self.repository.get_post_by_id(id)
         if product is None:
             raise InvalidProductIDException
@@ -33,6 +34,8 @@ class ProductService:
             raise NotYourProductException
         if title is not None:
             product.title = title
+        if images is not None:
+            product.images = images
         if content is not None:
             product.content = content
         if price is not None:
