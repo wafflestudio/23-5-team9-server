@@ -27,14 +27,14 @@ async def upload_product_image(
     )
     return ProductImageResponse.model_validate(image)
 
-@image_router.post("/me", status_code=201, response_model=UserImageResponse)
-async def upload_profile_image(
-    user: Annotated[User, Depends(login_with_header)],
-    request: UserImageRequest,
-    service: Annotated[ImageService, Depends()],
-) -> UserImageResponse:
-    image = await service.upload_profile_image(
-        user.id,
-        request.image_url
-    )
-    return UserImageResponse.model_validate(image)
+# @image_router.post("/me", status_code=201, response_model=UserImageResponse)
+# async def upload_profile_image(
+#     user: Annotated[User, Depends(login_with_header)],
+#     request: UserImageRequest,
+#     service: Annotated[ImageService, Depends()],
+# ) -> UserImageResponse:
+#     image = await service.upload_profile_image(
+#         user.id,
+#         request.image_url
+#     )
+#     return UserImageResponse.model_validate(image)

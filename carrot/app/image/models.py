@@ -18,11 +18,11 @@ class ProductImage(Base):
     
     product: Mapped["Product"] = relationship("Product", back_populates="images")
     
-class UserImage(Base):
-    __tablename__ = "user_image"
+# class UserImage(Base):
+#     __tablename__ = "user_image"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    image_url: Mapped[str] = mapped_column(String(255), nullable=False)
-    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+#     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+#     image_url: Mapped[str] = mapped_column(String(255), nullable=False)
+#     user_id: Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     
-    user: Mapped[User] = relationship("User", back_populates="images")
+#     user: Mapped[User] = relationship("User", back_populates="images")
