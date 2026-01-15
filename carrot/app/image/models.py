@@ -1,10 +1,13 @@
 import uuid
 from sqlalchemy import String, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from carrot.db.common import Base
+from typing import TYPE_CHECKING
 
+from carrot.db.common import Base
 from carrot.app.user.models import User
-from carrot.app.product.models import Product
+
+if TYPE_CHECKING:
+    from carrot.app.product.models import Product
 
 class ProductImage(Base):
     __tablename__ = "product_image"
