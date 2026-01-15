@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends
 
 from carrot.app.user.schemas import UserOnboardingRequest, UserUpdateRequest
-from carrot.app.image.models import ProductImage, UserImage
+from carrot.app.image.models import ProductImage
 from carrot.app.image.repositories import ImageRepository
 from carrot.common.exceptions import InvalidFormatException
 
@@ -20,11 +20,11 @@ class ImageService:
         new = await self.repository.upload_product_image(image)
         return new
     
-    async def upload_profile_image(self, user_id: str, url: str) -> UserImage:
-        image = UserImage(
-            image_url = url,
-            user_id = user_id
-        )
+    # async def upload_profile_image(self, user_id: str, url: str) -> UserImage:
+    #     image = UserImage(
+    #         image_url = url,
+    #         user_id = user_id
+    #     )
         
-        new = await self.repository.upload_profile_image(image)
-        return new
+    #     new = await self.repository.upload_profile_image(image)
+    #     return new
