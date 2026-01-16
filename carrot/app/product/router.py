@@ -49,15 +49,15 @@ async def update_post(
     )
     return ProductResponse.model_validate(product)
 
-@product_router.get("/me", status_code=200, response_model=ProductResponse)
+@product_router.get("/me", status_code=200, response_model=List[ProductResponse])
 async def view_post_my(
     user: Annotated[User, Depends(login_with_header)],
     service: Annotated[ProductService, Depends()],
 ) -> ProductResponse:
-    product = await service.view_post_my(
+    products = await service.view_post_my(
         user.id,
     )
-    return ProductResponse.model_validate(product)
+    return products
 
 @product_router.get("/", status_code=200, response_model=List[ProductResponse])
 async def view_post_all(
