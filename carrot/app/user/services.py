@@ -39,7 +39,9 @@ class UserService:
         return updated
 
     async def update_user(self, request: UserUpdateRequest, user: User) -> User:
-        if not any([request.nickname, request.region_id, request.profile_image]):
+        if not any(
+            [request.nickname, request.region_id, request.profile_image, request.coin]
+        ):
             raise InvalidFormatException()
 
         for key, value in request.model_dump(exclude_none=True).items():
