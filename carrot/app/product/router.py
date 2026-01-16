@@ -62,7 +62,7 @@ async def view_post(
     )
     return ProductResponse.model_validate(product)
 
-@product_router.get("/", status_code=200, response_model=ProductResponse)
+@product_router.get("/", status_code=200, response_model=List[ProductResponse])
 async def view_post_all(
     service: Annotated[ProductService, Depends()],
 ) -> List[ProductResponse]:
