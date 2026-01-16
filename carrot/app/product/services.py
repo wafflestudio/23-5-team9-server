@@ -51,14 +51,12 @@ class ProductService:
         return updated
     
     async def view_post_my(self, user_id: str):
-        product = await self.repository.get_post_by_user_id(user_id)
-        if product is None:
-            raise InvalidProductIDException
+        products = await self.repository.get_post_by_user_id(user_id)
+        
+        return products
         
     async def view_post_all(self):
         products = await self.repository.get_post_all()
-        if products is None:
-            raise InvalidProductIDException
         
         return products
     
