@@ -42,9 +42,12 @@ class User(Base):
         "SocialAccount", back_populates="user"
     )
 
-    sent_ledgers: Mapped["Ledger"] = relationship("Ledger", foreign_keys="[Ledger.user_id]", back_populates="user")
+    sent_ledgers: Mapped["Ledger"] = relationship(
+        "Ledger", foreign_keys="[Ledger.user_id]", back_populates="user"
+    )
     received_ledgers: Mapped["Ledger"] = relationship(
         "Ledger", foreign_keys="[Ledger.receive_user_id]", back_populates="receive_user"
+    )
     # Set relationships to 1:1 ChatRoom
     chat_rooms_v1: Mapped[list["ChatRoom"]] = relationship(
         "ChatRoom", foreign_keys="[ChatRoom.user_one_id]", back_populates="user_one"
