@@ -10,7 +10,6 @@ from carrot.app.region.schemas import RegionResponse
 
 class ProductImageRequest(BaseModel):
     image_url: str
-    product_id: str
     
 class UserImageRequest(BaseModel):
     image_url: str

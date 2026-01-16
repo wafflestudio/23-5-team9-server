@@ -23,7 +23,6 @@ async def upload_product_image(
 ) -> ProductImageResponse:
     image = await service.upload_product_image(
         request.image_url,
-        request.product_id
     )
     return ProductImageResponse.model_validate(image)
 

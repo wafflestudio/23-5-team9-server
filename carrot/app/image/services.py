@@ -11,10 +11,9 @@ class ImageService:
     def __init__(self, image_repository: Annotated[ImageRepository, Depends()]) -> None:
         self.repository = image_repository
 
-    async def upload_product_image(self, url: str, product_id: str) -> ProductImage:
+    async def upload_product_image(self, url: str) -> ProductImage:
         image = ProductImage(
             image_url = url,
-            product_id = product_id
         )
         
         new = await self.repository.upload_product_image(image)

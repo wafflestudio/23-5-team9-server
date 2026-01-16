@@ -26,7 +26,7 @@ async def create_post(
     product = await service.create_post(
         user.id,
         request.title,
-        request.images,
+        # request.images,
         request.content,
         request.price,
         request.category_id,
@@ -43,7 +43,7 @@ async def update_post(
         user.id,
         request.id,
         request.title,
-        request.images,
+        # request.images,
         request.content,
         request.price,
         request.category_id,
