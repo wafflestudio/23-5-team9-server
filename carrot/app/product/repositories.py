@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import Depends
 from sqlalchemy import select, and_
@@ -32,3 +32,9 @@ class ProductRepository:
     async def get_post_by_id(self, id: str) -> Product:
         post = await self.session.get(Product, id)
         return post
+    
+    async def get_post_all(self) -> List[Product]:
+        query = select(Product)
+        posts = await self.session.execute(query)
+        
+        return posts.scalars().all()

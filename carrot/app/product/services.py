@@ -55,7 +55,12 @@ class ProductService:
         if product is None:
             raise InvalidProductIDException
         
-        return product
+    async def view_post_all(self):
+        products = await self.repository.get_post_all()
+        if products is None:
+            raise InvalidProductIDException
+        
+        return products
     
     async def remove_post(self, id: str):
         product = await self.repository.get_post_by_id(id)
