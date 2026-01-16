@@ -14,7 +14,7 @@ class ProductService:
         self.repository = product_repository
 
     async def create_post(self, user_id: str, title: str, images: list, content: str, price: int, category_id: str) -> Product:
-        image_objects = [ProductImage(url=img_url) for img_url in images]
+        image_objects = [ProductImage(image_url=img_url) for img_url in images]
         product = Product(
             owner_id = user_id,
             title = title,
@@ -38,7 +38,7 @@ class ProductService:
         if title is not None:
             product.title = title
         if images is not None:
-            image_objects = [ProductImage(url=img_url) for img_url in images]
+            image_objects = [ProductImage(image_url=img_url) for img_url in images]
             product.images = image_objects
         if content is not None:
             product.content = content
