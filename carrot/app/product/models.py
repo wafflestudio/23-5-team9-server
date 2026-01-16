@@ -8,8 +8,8 @@ from carrot.db.common import Base
 from carrot.app.user.models import User
 from carrot.app.category.models import Category
 
-if TYPE_CHECKING:
-    from carrot.app.image.models import ProductImage
+# if TYPE_CHECKING:
+#     from carrot.app.image.models import ProductImage
     
 class Product(Base):
     __tablename__ = "product"

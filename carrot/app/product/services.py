@@ -7,7 +7,7 @@ from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.repositories import ProductRepository
 from carrot.app.product.exceptions import NotYourProductException, InvalidProductIDException
 from carrot.common.exceptions import InvalidFormatException
-from carrot.app.image.models import ProductImage
+# from carrot.app.image.models import ProductImage
 
 class ProductService:
     def __init__(self, product_repository: Annotated[ProductRepository, Depends()]) -> None:
