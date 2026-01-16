@@ -8,7 +8,6 @@ from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.schemas import (
     ProductPostRequest,
     ProductPatchRequest,
-    ProductViewRequest,
     ProductDeleteRequest,
     ProductResponse,
 )
