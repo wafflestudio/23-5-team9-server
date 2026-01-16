@@ -45,7 +45,7 @@ class ProductPostRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
     images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
-    price: Annotated[str, AfterValidator(validate_price)]
+    price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
 
 class ProductPatchRequest(BaseModel):
@@ -53,7 +53,7 @@ class ProductPatchRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
     images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
-    price: Annotated[str, AfterValidator(validate_price)]
+    price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
     is_sold: bool
     
