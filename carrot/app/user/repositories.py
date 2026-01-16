@@ -39,6 +39,19 @@ class UserRepository:
         )
         return await self.session.scalar(stmt)
 
+    async def get_user_for_update(self, user_id: str):
+        stmt = (
+            select(User)
+            .options(
+                selectinload(User.region),  # 유저의 동네 정보 (Region 모델)
+                selectinload(User.local_account),  # 유저의 로컬 계정 정보 (비밀번호 등)
+                selectinload(User.social_account),  # 유저의 소셜 계정 정보 (구글 등)
+            )
+            .where(User.id == user_id)
+            .with_for_update()
+        )
+        return await self.session.scalar(stmt)
+
     async def get_user_by_email(self, email: str) -> User | None:
         return await self.session.scalar(
             select(User)

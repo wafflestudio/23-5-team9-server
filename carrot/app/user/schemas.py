@@ -86,3 +86,12 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PublicUserResponse(BaseModel):
+    id: str
+    nickname: str
+    profile_image: str | None
+
+    class Config:
+        from_attributes = True
