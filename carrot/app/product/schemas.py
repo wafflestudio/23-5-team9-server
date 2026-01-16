@@ -57,9 +57,6 @@ class ProductPatchRequest(BaseModel):
     category_id: str
     is_sold: bool
     
-class ProductViewRequest(BaseModel):
-    id: str 
-    
 class ProductDeleteRequest(BaseModel):
     id: str 
 
