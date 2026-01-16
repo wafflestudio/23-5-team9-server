@@ -1,10 +1,11 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from carrot.app.auth.utils import login_with_header, partial_login_with_header
 from carrot.app.user.models import User
 from carrot.app.user.schemas import (
+    PublicUserResponse,
     UserOnboardingRequest,
     UserSignupRequest,
     UserUpdateRequest,
@@ -52,3 +53,16 @@ async def update_me(
 ) -> UserResponse:
     updated_user = await user_service.update_user(request=request, user=user)
     return UserResponse.model_validate(updated_user)
+
+
+@user_router.get("/{user_id}", status_code=status.HTTP_200_OK)
+async def get_user(
+    user_id: str,
+    user_service: Annotated[UserService, Depends()],
+) -> PublicUserResponse:
+    user = await user_service.get_user_by_id(user_id)
+    if user == None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No such user."
+        )
+    return PublicUserResponse.model_validate(user)
