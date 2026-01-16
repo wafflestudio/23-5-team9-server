@@ -1,29 +1,29 @@
-from typing import Annotated
+# from typing import Annotated
 
-from fastapi import Depends
+# from fastapi import Depends
 
-from carrot.app.user.schemas import UserOnboardingRequest, UserUpdateRequest
-from carrot.app.image.models import ProductImage
-from carrot.app.image.repositories import ImageRepository
-from carrot.common.exceptions import InvalidFormatException
+# from carrot.app.user.schemas import UserOnboardingRequest, UserUpdateRequest
+# from carrot.app.image.models import ProductImage
+# from carrot.app.image.repositories import ImageRepository
+# from carrot.common.exceptions import InvalidFormatException
 
-class ImageService:
-    def __init__(self, image_repository: Annotated[ImageRepository, Depends()]) -> None:
-        self.repository = image_repository
+# class ImageService:
+#     def __init__(self, image_repository: Annotated[ImageRepository, Depends()]) -> None:
+#         self.repository = image_repository
 
-    async def upload_product_image(self, url: str) -> ProductImage:
-        image = ProductImage(
-            image_url = url,
-        )
+#     async def upload_product_image(self, url: str) -> ProductImage:
+#         image = ProductImage(
+#             image_url = url,
+#         )
         
-        new = await self.repository.upload_product_image(image)
-        return new
+#         new = await self.repository.upload_product_image(image)
+#         return new
     
-    # async def upload_profile_image(self, user_id: str, url: str) -> UserImage:
-    #     image = UserImage(
-    #         image_url = url,
-    #         user_id = user_id
-    #     )
+#     async def upload_profile_image(self, user_id: str, url: str) -> UserImage:
+#         image = UserImage(
+#             image_url = url,
+#             user_id = user_id
+#         )
         
-    #     new = await self.repository.upload_profile_image(image)
-    #     return new
+#         new = await self.repository.upload_profile_image(image)
+#         return new
