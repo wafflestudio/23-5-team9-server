@@ -1,6 +1,6 @@
 from functools import wraps
 import re
-from typing import Annotated, Callable, TypeVar
+from typing import Annotated, Callable, TypeVar, List
 from fastapi import HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator
 from pydantic.functional_validators import AfterValidator
@@ -43,16 +43,19 @@ def skip_none(validator: Callable[[T], T]) -> Callable[[T | None], T | None]:
 
 class ProductPostRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
+    # images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
-    price: Annotated[str, AfterValidator(validate_price)]
+    price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
 
 class ProductPatchRequest(BaseModel):
     id: str
     title: Annotated[str, AfterValidator(validate_title)]
+    # images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
-    price: Annotated[str, AfterValidator(validate_price)]
+    price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
+    is_sold: bool
     
 class ProductDeleteRequest(BaseModel):
     id: str 
@@ -61,10 +64,12 @@ class ProductResponse(BaseModel):
     id: str
     owner_id: str
     title: str
+    # images: List[str]
     content: str | None
     price: int
     like_count: int
-    catetory: str
+    category_id: str
+    is_sold: bool
 
     class Config:
         from_attributes = True

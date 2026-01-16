@@ -142,7 +142,6 @@ class AuthService:
             username = claims.get("sub")
             if not username:
                 raise UnauthenticatedException()
-
         except (InvalidTokenException, JoseError):
             # 검증 함수에서 발생한 예외나 Jose 관련 에러를 인증 예외로 변환
             raise UnauthenticatedException()
@@ -153,5 +152,5 @@ class AuthService:
 
         if user is None:
             raise UnauthenticatedException()
-
+            
         return user

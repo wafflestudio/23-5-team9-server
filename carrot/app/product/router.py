@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends
 
@@ -25,6 +25,7 @@ async def create_post(
     product = await service.create_post(
         user.id,
         request.title,
+        # request.images,
         request.content,
         request.price,
         request.category_id,
@@ -41,11 +42,30 @@ async def update_post(
         user.id,
         request.id,
         request.title,
+        # request.images,
         request.content,
         request.price,
         request.category_id,
     )
     return ProductResponse.model_validate(product)
+
+@product_router.get("/me", status_code=200, response_model=List[ProductResponse])
+async def view_post_my(
+    user: Annotated[User, Depends(login_with_header)],
+    service: Annotated[ProductService, Depends()],
+) -> ProductResponse:
+    products = await service.view_post_my(
+        user.id,
+    )
+    return products
+
+@product_router.get("/", status_code=200, response_model=List[ProductResponse])
+async def view_post_all(
+    service: Annotated[ProductService, Depends()],
+) -> List[ProductResponse]:
+    products = await service.view_post_all()
+
+    return products
 
 @product_router.delete("/me", status_code=200, response_model=ProductResponse)
 async def remove_post(
