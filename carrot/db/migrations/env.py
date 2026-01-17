@@ -10,11 +10,11 @@ from carrot.db.common import Base
 # 모델 import (autogenerate에 필요)
 import carrot.app.auth.models  # noqa: F401
 import carrot.app.category.models  # noqa: F401
-import carrot.app.chat_message.models  # noqa: F401
-import carrot.app.chat_room.models  # noqa: F401
+import carrot.app.chat.models  # noqa: F401
 import carrot.app.product.models  # noqa: F401
 import carrot.app.region.models  # noqa: F401
 import carrot.app.user.models  # noqa: F401
+import carrot.app.pay.models  # noqa: F401
 
 
 config = context.config

@@ -10,17 +10,17 @@ from carrot.app.auth.models import BlockedToken
 
 
 class AuthRepository:
-    def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
+    def __init__(
+        self, session: Annotated[AsyncSession, Depends(get_db_session)]
+    ) -> None:
         self.session = session
 
     async def block_refresh_token(self, token: str, exp: datetime) -> None:
         blocked_token = BlockedToken(token=token, expired_at=exp)
         self.session.add(blocked_token)
-        # flush는 await 필요
         await self.session.flush()
 
     async def get_blocked_token(self, token: str) -> BlockedToken | None:
-        result = await self.session.execute(
+        return await self.session.scalar(
             select(BlockedToken).where(BlockedToken.token == token)
         )
-        return result.scalar_one_or_none()

@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from carrot.settings import SETTINGS
 
@@ -6,6 +7,11 @@ class AuthSettings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     FRONTEND_URL: str
+
+    @property
+    def ALLOW_ORIGIN(self) -> str:
+        parsed = urlparse(self.FRONTEND_URL)
+        return f"{parsed.scheme}://{parsed.netloc}"
 
     ACCESS_TOKEN_SECRET: str
     REFRESH_TOKEN_SECRET: str

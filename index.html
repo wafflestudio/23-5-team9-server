@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>FastAPI 연결 테스트</title>
+</head>
+<body>
+    <h1>FastAPI 연결 테스트</h1>
+    
+    <button onclick="checkRoot()">루트 경로(/) 확인</button>
+    <button onclick="checkApi()">API 경로(/api/...) 확인</button>
+
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;">
+        결과가 여기에 표시됩니다.
+    </div>
+
+    <script>
+        // 백엔드 주소 (FastAPI 기본 주소)
+        const SERVER_URL = 'http://127.0.0.1:8000';
+
+        // 1. "/" 경로 테스트
+        async function checkRoot() {
+            try {
+                const response = await fetch(`${SERVER_URL}/`);
+                const data = await response.json();
+                document.getElementById('result').innerText = "루트 응답: " + data;
+            } catch (err) {
+                document.getElementById('result').innerText = "에러 발생: " + err;
+            }
+        }
+
+        // 2. "/api" 경로 테스트 (api_router에 연결된 실제 경로가 있다면 그 주소를 적어야 합니다)
+        async function checkApi() {
+            try {
+                // 예시: 만약 api_router 안에 "/test"라는 경로가 있다면 URL은 /api/test가 됩니다.
+                // 현재는 예시로 /api만 호출해보겠습니다. (404가 날 수도 있음)
+                const response = await fetch(`${SERVER_URL}/api/some-endpoint`); 
+                const data = await response.json();
+                document.getElementById('result').innerText = "API 응답: " + JSON.stringify(data);
+            } catch (err) {
+                document.getElementById('result').innerText = "에러 발생: " + err;
+            }
+        }
+    </script>
+</body>
+</html>
