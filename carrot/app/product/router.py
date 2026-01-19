@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Query
 
 from fastapi import APIRouter, Depends
 
@@ -53,9 +53,19 @@ async def update_post(
 async def view_post_my(
     user: Annotated[User, Depends(login_with_header)],
     service: Annotated[ProductService, Depends()],
-) -> ProductResponse:
+) -> List[ProductResponse]:
     products = await service.view_post_my(
         user.id,
+    )
+    return products
+
+@product_router.get("/", status_code=200, response_model=List[ProductResponse])
+async def view_post_by_seller(
+    service: Annotated[ProductService, Depends()],
+    user_id: str = Query(..., alias="seller"),
+) -> List[ProductResponse]:
+    products = await service.view_post_by_seller(
+        user_id,
     )
     return products
 

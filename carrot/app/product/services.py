@@ -54,6 +54,11 @@ class ProductService:
         products = await self.repository.get_post_by_user_id(user_id)
         
         return products
+    
+    async def view_post_by_seller(self, user_id: str):
+        products = await self.repository.get_post_by_user_id(user_id)
+        
+        return products
         
     async def view_post_all(self):
         products = await self.repository.get_post_all()
