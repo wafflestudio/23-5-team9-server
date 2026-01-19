@@ -33,3 +33,6 @@ class PayRepository:
         )
         ledgers = await self.session.scalars(stmt)
         return list(ledgers.all())
+
+    async def get_ledger_by_id(self, id: str) -> Ledger | None:
+        return await self.session.scalar(select(Ledger).where(Ledger.id == id))

@@ -10,6 +10,7 @@ class BalanceRequest(BaseModel):
 
     amount: int = Field(gt=0)
     description: str
+    request_key: str
 
 
 class TransferRequest(BalanceRequest):
