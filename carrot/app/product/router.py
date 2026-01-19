@@ -60,21 +60,16 @@ async def view_post_my(
     return products
 
 @product_router.get("/", status_code=200, response_model=List[ProductResponse])
-async def view_post_by_seller(
+async def view_posts(
     service: Annotated[ProductService, Depends()],
-    user_id: str = Query(..., alias="seller"),
+    user_id: str | None = Query(default = None, alias="seller"),
 ) -> List[ProductResponse]:
-    products = await service.view_post_by_seller(
-        user_id,
-    )
-    return products
-
-@product_router.get("/", status_code=200, response_model=List[ProductResponse])
-async def view_post_all(
-    service: Annotated[ProductService, Depends()],
-) -> List[ProductResponse]:
-    products = await service.view_post_all()
-
+    if user_id:
+        products = await service.view_post_by_seller(
+            user_id,
+        )
+    else:
+        products = await service.view_post_all()
     return products
 
 @product_router.delete("/me", status_code=200, response_model=ProductResponse)
