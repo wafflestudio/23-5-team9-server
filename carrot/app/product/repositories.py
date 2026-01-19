@@ -20,7 +20,7 @@ class ProductRepository:
         return product
 
     async def update_post(self, product: Product) -> Product:
-        merged = self.session.merge(product)
+        merged = await self.session.merge(product)
         await self.session.commit()
         await self.session.refresh(merged)
         return merged
