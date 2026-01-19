@@ -26,7 +26,7 @@ class UserService:
 
         user = await self.user_repository.create_user(email)
         await self.user_repository.create_local_account(user.id, hashed_password)
-        
+
         return user
 
     async def onboard_user(self, request: UserOnboardingRequest, user: User) -> User:
@@ -34,12 +34,14 @@ class UserService:
             setattr(user, key, value)
 
         user.status = UserStatus.ACTIVE
-        
+
         updated = await self.user_repository.update_user(user)
         return updated
 
     async def update_user(self, request: UserUpdateRequest, user: User) -> User:
-        if not any([request.nickname, request.region_id, request.profile_image, request.coin]):
+        if not any(
+            [request.nickname, request.region_id, request.profile_image, request.coin]
+        ):
             raise InvalidFormatException()
 
         for key, value in request.model_dump(exclude_none=True).items():
