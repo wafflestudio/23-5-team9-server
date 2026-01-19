@@ -74,7 +74,6 @@ async def remove_post(
     service: Annotated[ProductService, Depends()],
 ) -> ProductResponse:
     product = await service.remove_post(
-        user.id,
         request.id,
     )
     return ProductResponse.model_validate(product)

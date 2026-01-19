@@ -28,7 +28,7 @@ class ProductService:
         return new
 
     async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str) -> Product:
-        product = await self.repository.get_post_by_id(id)
+        product = await self.repository.get_post_by_product_id(id)
 
         if product is None:
             raise InvalidProductIDException
@@ -60,8 +60,8 @@ class ProductService:
         
         return products
     
-    async def remove_post(self, user_id:str, id: str):
-        product = await self.repository.get_post_by_id(id)
+    async def remove_post(self, id: str):
+        product = await self.repository.get_post_by_product_id(id)
         if product is None:
             raise InvalidProductIDException
         

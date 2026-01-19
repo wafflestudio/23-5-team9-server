@@ -50,12 +50,12 @@ class ProductPostRequest(BaseModel):
 
 class ProductPatchRequest(BaseModel):
     id: str
-    title: Annotated[str, AfterValidator(validate_title)]
+    title: Annotated[str, AfterValidator(validate_title)] | None
     # images: List[str]
-    content: Annotated[str, AfterValidator(validate_content)]
-    price: Annotated[int, AfterValidator(validate_price)]
-    category_id: str
-    is_sold: bool
+    content: Annotated[str, AfterValidator(validate_content)] | None
+    price: Annotated[int, AfterValidator(validate_price)] | None
+    category_id: str | None
+    is_sold: bool | None
     
 class ProductDeleteRequest(BaseModel):
     id: str 

@@ -35,6 +35,12 @@ class ProductRepository:
         
         return posts.scalars().all()
     
+    async def get_post_by_product_id(self, product_id: str) -> Product:
+        query = select(Product).where(Product.id == product_id)
+        posts = await self.session.execute(query)
+        
+        return posts.scalars().one_or_none()
+    
     async def get_post_all(self) -> List[Product]:
         query = select(Product)
         posts = await self.session.execute(query)
