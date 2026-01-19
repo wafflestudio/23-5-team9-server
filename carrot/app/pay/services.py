@@ -142,5 +142,7 @@ class PayService:
 
             return ledger
 
-    async def get_transactions(self, user: User, limit: int, offset: int):
-        return await self.pay_repository.get_ledgers(user.id, limit, offset)
+    async def get_transactions(
+        self, user: User, limit: int, offset: int, partner_id: str | None
+    ):
+        return await self.pay_repository.get_ledgers(user.id, limit, offset, partner_id)

@@ -53,6 +53,9 @@ async def get_transactions(
     pay_service: Annotated[PayService, Depends()],
     limit: int = Query(default=10, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    partner_id: str | None = Query(default=None),
 ) -> list[TransactionResponse]:
-    ledgers = await pay_service.get_transactions(user=user, limit=limit, offset=offset)
+    ledgers = await pay_service.get_transactions(
+        user=user, limit=limit, offset=offset, partner_id=partner_id
+    )
     return [create_transaction_response(ledger) for ledger in ledgers]
