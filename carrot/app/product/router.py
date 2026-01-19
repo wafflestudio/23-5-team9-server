@@ -1,6 +1,6 @@
-from typing import Annotated, List, Query
+from typing import Annotated, List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from carrot.app.auth.utils import login_with_header, partial_login_with_header
 from carrot.app.user.models import User
