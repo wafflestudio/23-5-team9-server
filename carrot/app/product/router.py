@@ -2,7 +2,7 @@ from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, Query
 
-from carrot.app.auth.utils import login_with_header, partial_login_with_header
+from carrot.app.auth.utils import login_with_header, partial_login_with_header, login_with_header_optional
 from carrot.app.user.models import User
 from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.schemas import (
@@ -11,6 +11,7 @@ from carrot.app.product.schemas import (
     ProductResponse,
 )
 from carrot.app.product.services import ProductService
+from carrot.app.product.exceptions import ShouldLoginException
 
 product_router = APIRouter()
 
@@ -61,12 +62,14 @@ async def view_post(
 @product_router.get("/", status_code=200, response_model=List[ProductResponse])
 async def view_posts(
     service: Annotated[ProductService, Depends()],
-    user: Annotated[User, Depends(login_with_header)],
+    user: Annotated[User | None, Depends(login_with_header_optional)],
     user_id: str | None = Query(default = None, alias="seller"),
     keyword: str | None = Query(default = None, alias="search"),
 ) -> List[ProductResponse]:
     if user_id == "me":
-            user_id = user.id
+        if user is None:
+            raise ShouldLoginException
+        user_id = user.id
             
     if user_id and keyword:
         return await service.view_posts_by_seller_keyword(user_id, keyword)
