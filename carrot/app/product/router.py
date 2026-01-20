@@ -50,27 +50,27 @@ async def update_post(
     return ProductResponse.model_validate(product)
 
 @product_router.get("/me", status_code=200, response_model=List[ProductResponse])
-async def view_post_my(
+async def view_posts_my(
     user: Annotated[User, Depends(login_with_header)],
     service: Annotated[ProductService, Depends()],
 ) -> List[ProductResponse]:
-    products = await service.view_post_my(
-        user.id,
-    )
+    products = await service.view_posts_my(user.id)
+    
     return products
 
 @product_router.get("/", status_code=200, response_model=List[ProductResponse])
 async def view_posts(
     service: Annotated[ProductService, Depends()],
     user_id: str | None = Query(default = None, alias="seller"),
-) -> List[ProductResponse]:
+    product_id: str | None = Query(default = None, alias="post"),
+) -> ProductResponse | List[ProductResponse]:
+    if product_id:
+        return await service.view_post_by_product_id(product_id)
+    
     if user_id:
-        products = await service.view_post_by_seller(
-            user_id,
-        )
-    else:
-        products = await service.view_post_all()
-    return products
+        return await service.view_posts_by_seller(user_id)
+    
+    return await service.view_posts_all()
 
 @product_router.delete("/me", status_code=200, response_model=ProductResponse)
 async def remove_post(
@@ -78,7 +78,6 @@ async def remove_post(
     request: ProductDeleteRequest,
     service: Annotated[ProductService, Depends()],
 ) -> ProductResponse:
-    product = await service.remove_post(
-        request.id,
-    )
+    product = await service.remove_post(request.id)
+    
     return ProductResponse.model_validate(product)

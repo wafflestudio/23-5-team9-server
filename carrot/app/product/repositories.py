@@ -29,7 +29,7 @@ class ProductRepository:
         await self.session.delete(product)
         await self.session.commit()
     
-    async def get_post_by_user_id(self, user_id: str) -> List[Product]:
+    async def get_posts_by_user_id(self, user_id: str) -> List[Product]:
         query = select(Product).where(Product.owner_id == user_id)
         posts = await self.session.execute(query)
         
@@ -41,7 +41,7 @@ class ProductRepository:
         
         return posts.scalars().one_or_none()
     
-    async def get_post_all(self) -> List[Product]:
+    async def get_posts_all(self) -> List[Product]:
         query = select(Product)
         posts = await self.session.execute(query)
         

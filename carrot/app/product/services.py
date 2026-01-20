@@ -50,23 +50,28 @@ class ProductService:
         updated = await self.repository.update_post(product)
         return updated
     
-    async def view_post_my(self, user_id: str):
-        products = await self.repository.get_post_by_user_id(user_id)
+    async def view_posts_my(self, user_id: str):
+        products = await self.repository.get_posts_by_user_id(user_id)
         
         return products
     
-    async def view_post_by_seller(self, user_id: str):
-        products = await self.repository.get_post_by_user_id(user_id)
+    async def view_posts_by_seller(self, user_id: str):
+        products = await self.repository.get_posts_by_user_id(user_id)
         
         return products
         
-    async def view_post_all(self):
-        products = await self.repository.get_post_all()
+    async def view_posts_all(self):
+        products = await self.repository.get_posts_all()
         
         return products
     
-    async def remove_post(self, id: str):
-        product = await self.repository.get_post_by_product_id(id)
+    async def view_post_by_product_id(self, product_id: str):
+        product = await self.repository.get_post_by_product_id(product_id)
+        
+        return product
+    
+    async def remove_post(self, product_id: str):
+        product = await self.repository.get_post_by_product_id(product_id)
         if product is None:
             raise InvalidProductIDException
         
