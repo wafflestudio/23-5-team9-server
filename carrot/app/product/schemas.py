@@ -49,16 +49,12 @@ class ProductPostRequest(BaseModel):
     category_id: str
 
 class ProductPatchRequest(BaseModel):
-    id: str
     title: Annotated[str, AfterValidator(validate_title)]
     # images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
     is_sold: bool
-
-class ProductDeleteRequest(BaseModel):
-    id: str 
 
 class ProductResponse(BaseModel):
     id: str

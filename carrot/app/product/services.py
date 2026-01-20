@@ -35,45 +35,52 @@ class ProductService:
         
         if user_id != product.owner_id:
             raise NotYourProductException
-        if title is not None:
-            product.title = title
-        # if images is not None:
-        #     image_objects = [ProductImage(image_url=img_url) for img_url in images]
-        #     product.images = image_objects
-        if content is not None:
-            product.content = content
-        if price is not None:
-            product.price = price
-        if category_id is not None:
-            product.category_id = category_id
+        
+        product.title = title
+        # image_objects = [ProductImage(image_url=img_url) for img_url in images]
+        # product.images = image_objects
+        product.content = content
+        product.price = price
+        product.category_id = category_id
         
         updated = await self.repository.update_post(product)
         return updated
     
-    async def view_posts_my(self, user_id: str):
-        products = await self.repository.get_posts_by_user_id(user_id)
+    async def view_post_by_product_id(self, product_id: str):
+        product = await self.repository.get_post_by_product_id(product_id)
         
-        return products
+        if product is None:
+            raise InvalidProductIDException
+        
+        return product
     
     async def view_posts_by_seller(self, user_id: str):
         products = await self.repository.get_posts_by_user_id(user_id)
         
         return products
+    
+    async def view_posts_by_seller_keyword(self, user_id: str, keyword: str):
+        products = await self.repository.get_posts_by_user_id_keyword(user_id, keyword)
         
+        return products
+    
+    async def view_posts_by_keyword(self, keyword: str):
+        products = await self.repository.get_posts_by_keyword(keyword)
+        
+        return products
+    
     async def view_posts_all(self):
         products = await self.repository.get_posts_all()
         
         return products
     
-    async def view_post_by_product_id(self, product_id: str):
+    async def remove_post(self, user_id: str, product_id: str):
         product = await self.repository.get_post_by_product_id(product_id)
         
-        return product
-    
-    async def remove_post(self, product_id: str):
-        product = await self.repository.get_post_by_product_id(product_id)
         if product is None:
             raise InvalidProductIDException
         
+        if user_id != product.owner_id:
+            raise NotYourProductException
+        
         await self.repository.remove_post(product)
-        return product

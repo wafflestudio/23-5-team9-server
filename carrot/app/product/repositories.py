@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import Depends
-from sqlalchemy import select, and_, text
+from sqlalchemy import select, and_, text, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from carrot.app.user.models import LocalAccount, SocialAccount, User
@@ -24,10 +24,12 @@ class ProductRepository:
         await self.session.commit()
         await self.session.refresh(merged)
         return merged
-    
-    async def remove_post(self, product: Product):
-        await self.session.delete(product)
-        await self.session.commit()
+        
+    async def get_post_by_product_id(self, product_id: str) -> Product:
+        query = select(Product).where(Product.id == product_id)
+        posts = await self.session.execute(query)
+        
+        return posts.scalars().one_or_none()
     
     async def get_posts_by_user_id(self, user_id: str) -> List[Product]:
         query = select(Product).where(Product.owner_id == user_id)
@@ -35,14 +37,38 @@ class ProductRepository:
         
         return posts.scalars().all()
     
-    async def get_post_by_product_id(self, product_id: str) -> Product:
-        query = select(Product).where(Product.id == product_id)
+    async def get_posts_by_user_id_keyword(self, user_id: str, keyword: str) -> List[Product]:
+        search_pattern = f"%{keyword}%"
+        
+        query = select(Product).where(
+            Product.owner_id == user_id,
+            or_(
+                Product.title.ilike(search_pattern),
+                Product.content.ilike(search_pattern)
+            )
+        )
         posts = await self.session.execute(query)
         
-        return posts.scalars().one_or_none()
+        return posts.scalars().all()
+    
+    async def get_posts_by_keyword(self, keyword: str) -> List[Product]:
+        search_pattern = f"%{keyword}%"
+        query = select(Product).where(
+            or_(
+                Product.title.like(search_pattern),
+                Product.content.like(search_pattern)
+            )
+        )
+        posts = await self.session.execute(query)
+        
+        return posts.scalars().all()
     
     async def get_posts_all(self) -> List[Product]:
         query = select(Product)
         posts = await self.session.execute(query)
         
         return posts.scalars().all()
+    
+    async def remove_post(self, product: Product):
+        await self.session.delete(product)
+        await self.session.commit()
