@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import and_, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from carrot.app.region.models import Region
@@ -47,3 +47,27 @@ class RegionRepository:
         )
 
         return [dict(row) for row in result.mappings()]
+
+    async def get_region_from_coordinates(
+        self, lat: float, long: float
+    ) -> Region | None:
+        point_wkt = f"POINT({lat} {long})"
+        return await self.session.scalar(
+            select(Region).where(
+                func.ST_Contains(Region.geom, func.ST_GeomFromText(point_wkt, 4326))
+            )
+        )
+
+    async def get_regions_from_query(
+        self, query: str | None, limit: int, offset: int
+    ) -> list[Region]:
+        stmt = (
+            select(Region)
+            .where(Region.full_name.contains(query))
+            .order_by(Region.sido, Region.sigugun, Region.dong)
+            .limit(limit)
+            .offset(offset)
+        )
+
+        regions = await self.session.scalars(stmt)
+        return list(regions.all())

@@ -27,3 +27,13 @@ class RegionService:
         return await self.region_repository.get_all_dong(
             sido=sido_nm, sigugun=sigugun_nm
         )
+
+    async def get_region_from_coordinates(
+        self, lat: float, long: float
+    ) -> Region | None:
+        return await self.region_repository.get_region_from_coordinates(lat, long)
+
+    async def get_region_from_query(
+        self, query: str, limit: int, offset: int
+    ) -> list[Region]:
+        return await self.region_repository.get_regions_from_query(query, limit, offset)

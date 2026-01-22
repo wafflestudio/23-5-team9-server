@@ -6,6 +6,7 @@ class RegionResponse(BaseModel):
     sido: str
     sigugun: str
     dong: str
+    full_name: str
 
     class Config:
         from_attributes = True
