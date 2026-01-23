@@ -55,7 +55,7 @@ class ProductService:
         return product
     
     async def view_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None):
-        products = await self.repository.get_posts_by_query(keyword)
+        products = await self.repository.get_posts_by_query(user_id, keyword, region_id)
         
         return products
     

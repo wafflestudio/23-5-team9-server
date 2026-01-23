@@ -73,7 +73,7 @@ async def view_posts(
         user_id = user.id
             
     if user_id or keyword or region_id:
-        return await service.view_posts_by_query(user_id, keyword)
+        return await service.view_posts_by_query(user_id, keyword, region_id)
     
     return await service.view_posts_all()
 
