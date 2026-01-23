@@ -29,6 +29,7 @@ async def create_post(
         request.content,
         request.price,
         request.category_id,
+        user.region_id,
     )
     return ProductResponse.model_validate(product)
 
@@ -47,6 +48,7 @@ async def update_post(
         request.content,
         request.price,
         request.category_id,
+        request.region_id,
     )
     return ProductResponse.model_validate(product)
 

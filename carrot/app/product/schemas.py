@@ -47,7 +47,6 @@ class ProductPostRequest(BaseModel):
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
-    region_id: str
 
 class ProductPatchRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]

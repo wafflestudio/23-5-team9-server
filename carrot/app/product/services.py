@@ -13,7 +13,7 @@ class ProductService:
     def __init__(self, product_repository: Annotated[ProductRepository, Depends()]) -> None:
         self.repository = product_repository
 
-    async def create_post(self, user_id: str, title: str, content: str, price: int, category_id: str) -> Product:
+    async def create_post(self, user_id: str, title: str, content: str, price: int, category_id: str, region_id: str) -> Product:
         # image_objects = [ProductImage(image_url=img_url) for img_url in images]
         product = Product(
             owner_id = user_id,
@@ -22,12 +22,13 @@ class ProductService:
             content = content,
             price = price,
             category_id = category_id,
+            region_id = region_id,
         )
         
         new = await self.repository.create_post(product)
         return new
 
-    async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str) -> Product:
+    async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str, region_id: str) -> Product:
         product = await self.repository.get_post_by_product_id(id)
 
         if product is None:
@@ -42,6 +43,7 @@ class ProductService:
         product.content = content
         product.price = price
         product.category_id = category_id
+        product.region_id = region_id
         
         updated = await self.repository.update_post(product)
         return updated
