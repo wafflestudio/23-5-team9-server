@@ -31,13 +31,13 @@ class ProductRepository:
         
         return posts.scalars().one_or_none()
     
-    async def get_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None) -> List[Product]:
+    async def get_posts_by_query(self, user_id: str, keyword: str, region_id: str) -> List[Product]:
         query = select(Product)
         
-        if user_id is not None:
+        if user_id:
             query = query.where(Product.owner_id == user_id)
             
-        if keyword is not None:
+        if keyword:
             search_pattern = f"%{keyword}%"
             query = query.where(
                 or_(
@@ -46,7 +46,7 @@ class ProductRepository:
                 )
             )
         
-        if region_id is not None:
+        if region_id:
             query = query.where(Product.region_id == region_id)
         
         posts = await self.session.execute(query)
