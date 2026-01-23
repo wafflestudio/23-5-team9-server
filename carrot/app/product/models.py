@@ -7,6 +7,7 @@ from carrot.db.common import Base
 
 from carrot.app.user.models import User
 from carrot.app.category.models import Category
+from carrot.app.region.models import Region
 
 # if TYPE_CHECKING:
 #     from carrot.app.image.models import ProductImage
@@ -22,10 +23,12 @@ class Product(Base):
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
     category_id: Mapped[str] = mapped_column(String(36), ForeignKey("category.id", ondelete="CASCADE"), nullable=False)
+    region_id: Mapped[str] = mapped_column(String(36), ForeignKey("region.id", ondelete="CASCADE"), nullable=False)
     is_sold: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped[Category] = relationship("User")
     category: Mapped[Category] = relationship("Category")
+    region: Mapped[Region] = relationship("Region")
     
 class UserProduct(Base):
     __tablename__ = "user_product"

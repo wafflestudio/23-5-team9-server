@@ -65,20 +65,15 @@ async def view_posts(
     user: Annotated[User | None, Depends(login_with_header_optional)],
     user_id: str | None = Query(default = None, alias="seller"),
     keyword: str | None = Query(default = None, alias="search"),
+    region_id: str | None = Query(default = None, alias="region"),
 ) -> List[ProductResponse]:
     if user_id == "me":
         if user is None:
             raise ShouldLoginException
         user_id = user.id
             
-    if user_id and keyword:
-        return await service.view_posts_by_seller_keyword(user_id, keyword)
-    
-    if user_id:
-        return await service.view_posts_by_seller(user_id)
-    
-    if keyword:
-        return await service.view_posts_by_keyword(keyword)
+    if user_id or keyword or region_id:
+        return await service.view_posts_by_query(user_id, keyword)
     
     return await service.view_posts_all()
 

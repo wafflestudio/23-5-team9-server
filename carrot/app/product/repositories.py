@@ -31,34 +31,24 @@ class ProductRepository:
         
         return posts.scalars().one_or_none()
     
-    async def get_posts_by_user_id(self, user_id: str) -> List[Product]:
-        query = select(Product).where(Product.owner_id == user_id)
-        posts = await self.session.execute(query)
+    async def get_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None) -> List[Product]:
+        query = select(Product)
         
-        return posts.scalars().all()
-    
-    async def get_posts_by_user_id_keyword(self, user_id: str, keyword: str) -> List[Product]:
-        search_pattern = f"%{keyword}%"
-        
-        query = select(Product).where(
-            Product.owner_id == user_id,
-            or_(
-                Product.title.ilike(search_pattern),
-                Product.content.ilike(search_pattern)
+        if user_id is not None:
+            query = query.where(Product.owner_id == user_id)
+            
+        if keyword is not None:
+            search_pattern = f"%{keyword}%"
+            query = query.where(
+                or_(
+                    Product.title.ilike(search_pattern),
+                    Product.content.ilike(search_pattern)
+                )
             )
-        )
-        posts = await self.session.execute(query)
         
-        return posts.scalars().all()
-    
-    async def get_posts_by_keyword(self, keyword: str) -> List[Product]:
-        search_pattern = f"%{keyword}%"
-        query = select(Product).where(
-            or_(
-                Product.title.like(search_pattern),
-                Product.content.like(search_pattern)
-            )
-        )
+        if region_id is not None:
+            query = query.where(Product.region_id == region_id)
+        
         posts = await self.session.execute(query)
         
         return posts.scalars().all()

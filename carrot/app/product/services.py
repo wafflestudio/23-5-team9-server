@@ -54,18 +54,8 @@ class ProductService:
         
         return product
     
-    async def view_posts_by_seller(self, user_id: str):
-        products = await self.repository.get_posts_by_user_id(user_id)
-        
-        return products
-    
-    async def view_posts_by_seller_keyword(self, user_id: str, keyword: str):
-        products = await self.repository.get_posts_by_user_id_keyword(user_id, keyword)
-        
-        return products
-    
-    async def view_posts_by_keyword(self, keyword: str):
-        products = await self.repository.get_posts_by_keyword(keyword)
+    async def view_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None):
+        products = await self.repository.get_posts_by_query(keyword)
         
         return products
     
