@@ -19,6 +19,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 from carrot.db.connection import get_session_factory, db
 from carrot.app.chat.manager import manager
 from carrot.app.auth.utils import verify_and_decode_token
+from carrot.app.auth.settings import AUTH_SETTINGS
+
+from carrot.app.auth.exceptions import (
+    BadAuthorizationHeaderException,
+    UnauthenticatedException,
+    InvalidAccountException,
+    InvalidTokenException,
+)
 
 
 
@@ -101,55 +109,65 @@ async def get_opponent_status(
 async def websocket_endpoint(
     websocket: WebSocket, 
     room_id: str,
-    # 세션 자체가 아닌 세션을 만드는 '공장'을 주입받습니다.
     session_factory: async_sessionmaker = Depends(get_session_factory)
 ):
-    # 1. 웹소켓 연결 수락
     await websocket.accept()
-    current_user = None
-
-    # 2. 인증 절차
+    current_user_id = None
+    
     try:
-        auth_message = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
-        token = auth_message.get("token")
-        current_user = await verify_and_decode_token(token) # 토큰 검증 로직
-
-        if not current_user:
+        # 1. [인증] 첫 메시지로 토큰 받기
+        try:
+            auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
+            token = auth_data.get("token")
+            
+            # 테스트용 우회 로직 (필요시 유지)
+            if token == "test_token":
+                current_user_id = 999
+            else:
+                # 수정된 함수 호출: claims 반환
+                claims = verify_and_decode_token(token, AUTH_SETTINGS.ACCESS_TOKEN_SECRET)
+                # claims 내의 유저 식별자 추출 (보통 'sub'나 'user_id' 필드 사용)
+                current_user_id = claims.get("sub") 
+            
+            if not current_user_id:
+                raise InvalidTokenException()
+                
+        except (asyncio.TimeoutError, InvalidTokenException, Exception) as e:
             await websocket.close(code=4003) # Forbidden
             return
-        
-    except (asyncio.TimeoutError, Exception):
-        await websocket.close(code=4008) # 인증 시간 초과
-        return
 
-    # 3. 연결 관리
-    await manager.connect(websocket, room_id)
+        # 2. 인증 성공 시 매니저 등록
+        await manager.connect(websocket, room_id)
 
-    # 4. 메시지 수신 및 브로드캐스트 루프
-    try:
+        # 3. 메인 대화 루프
         while True:
             data = await websocket.receive_json()
             
-            # [비동기 세션 이슈 해결] 메시지를 처리할 때마다 새로운 세션을 생성
             async with session_factory() as session:
                 try:
-                    # 메시지 저장
+                    # DB 저장: current_user_id를 사용하여 저장
                     new_msg = await chat_service.save_new_message(
-                        session, room_id, current_user.id, data["content"]
+                        session, 
+                        room_id=room_id, 
+                        sender_id=current_user_id, 
+                        content=data["content"]
                     )
                     await session.commit()
                     
-                    # 브로드캐스트
+                    # 브로드캐스트 (닉네임 등이 필요하면 session에서 유저를 한 번 조회해야 합니다)
                     await manager.broadcast_to_room(room_id, {
                         "message_id": new_msg.id,
-                        "sender_id": current_user.id,
+                        "sender_id": current_user_id,
                         "content": new_msg.content,
                         "created_at": new_msg.created_at.isoformat()
                     })
                 except Exception as e:
-                    await session.rollback() # 에러 발생 시 롤백하여 세션 오염 방지
-                    await websocket.send_json({"error": "메시지 전송 실패"})
-                    print(f"DB Error: {e}")
+                    await session.rollback()
+                    # 이 줄을 추가해서 정확히 어떤 에러인지 터미널에서 확인하세요!
+                    print(f"❌ Message Save Error: {type(e).__name__} - {e}") 
+                    import traceback
+                    traceback.print_exc() # 상세 스택트레이스까지 출력
+                    await websocket.send_json({"error": str(e)})
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, room_id)
