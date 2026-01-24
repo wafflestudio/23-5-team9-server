@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, and_, update, desc, func
 from typing import List
 
-from carrot.app.chat.models import ChatRoom, ChatMessage, User
+from carrot.app.chat.models import ChatRoom, ChatMessage, User, GroupChatRoom, GroupChatMember
 from carrot.app.chat.utils import (
     get_unread_count_subquery, 
     get_last_message_id_subquery, 
@@ -147,5 +147,103 @@ class ChatService:
         # 상대 유저 조회
         user_stmt = select(User).where(User.id == opponent_id)
         return (await db.execute(user_stmt)).scalar_one_or_none()
+    
+    ### 7. 오픈 그룹 채팅방 생성 (방장)
+    async def create_open_group_room(self, 
+        db: AsyncSession, 
+        creator_id: str, 
+        title: str, 
+        description: str = None, 
+        max_members: int = 100
+        ) -> GroupChatRoom:
+        
+        # 1. 방 생성
+        new_room = GroupChatRoom(
+            title=title, 
+            description=description, 
+            max_members=max_members
+        )
+        db.add(new_room)
+        await db.flush() # ID를 미리 할당받기 위해 flush 사용
+
+        # 2. 생성자를 방장(is_admin=True)으로 멤버 등록
+        admin_member = GroupChatMember(
+            room_id=new_room.id, 
+            user_id=creator_id, 
+            is_admin=True
+        )
+        db.add(admin_member)
+        
+        await db.commit()
+        await db.refresh(new_room)
+        return new_room
+
+    ### 8. 채팅방 참여하기 (Join)
+    async def join_group_room(self, db: AsyncSession, room_id: str, user_id: str):
+        # 1. 방 존재 여부 및 현재 인원 확인
+        stmt = select(GroupChatRoom).where(GroupChatRoom.id == room_id)
+        result = await db.execute(stmt)
+        room = result.scalar_one_or_none()
+        
+        if not room:
+            raise ChatRoomNotFoundException()
+
+        # 2. 이미 참여 중인지 확인
+        member_stmt = select(GroupChatMember).where(
+            and_(GroupChatMember.room_id == room_id, GroupChatMember.user_id == user_id)
+        )
+        existing_member = (await db.execute(member_stmt)).scalar_one_or_none()
+        if existing_member:
+            return room # 이미 참여 중이면 그대로 반환
+
+        # 3. 인원 제한 확인
+        count_stmt = select(func.count()).select_from(GroupChatMember).where(GroupChatMember.room_id == room_id)
+        current_count = (await db.execute(count_stmt)).scalar() or 0
+        
+        if current_count >= room.max_members:
+            raise ChatRoomFullException() # 인원 초과 예외 발생
+
+        # 4. 멤버 추가
+        new_member = GroupChatMember(room_id=room_id, user_id=user_id, is_admin=False)
+        db.add(new_member)
+        await db.commit()
+        return room
+
+    ### 9. 참여자 목록 조회
+    async def get_group_room_members(self, db: AsyncSession, room_id: str) -> List[GroupChatMember]:
+        # 유저 정보(User 모델)까지 조인해서 가져오는 것이 좋습니다.
+        stmt = (
+            select(GroupChatMember)
+            .where(GroupChatMember.room_id == room_id)
+            .order_by(desc(GroupChatMember.is_admin), GroupChatMember.joined_at.asc())
+        )
+        result = await db.execute(stmt)
+        return result.scalars().all()
+
+    ### 10. 채팅방 나가기 (방장 위임 로직 포함)
+    async def leave_group_room(self, db: AsyncSession, room_id: str, user_id: str):
+        # 1. 해당 유저가 이 방의 멤버인지 확인
+        stmt = select(GroupChatMember).where(
+            and_(GroupChatMember.room_id == room_id, GroupChatMember.user_id == user_id)
+        )
+        member = (await db.execute(stmt)).scalar_one_or_none()
+        
+        if not member:
+            return # 참여 중인 멤버가 아니면 아무 작업 안 함
+
+        is_admin = member.is_admin
+
+        # 2. 방장인지 확인
+        if is_admin:
+            # 방장이 나가면 방 자체를 삭제 (Cascade 설정에 의해 멤버, 메시지도 함께 삭제됨)
+            room_stmt = select(GroupChatRoom).where(GroupChatRoom.id == room_id)
+            room = (await db.execute(room_stmt)).scalar_one_or_none()
+            if room:
+                await db.delete(room)
+        else:
+            # 일반 유저면 본인만 멤버 테이블에서 삭제
+            await db.delete(member)
+
+        await db.commit()
 
 chat_service = ChatService()
