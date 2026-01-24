@@ -14,9 +14,12 @@ from carrot.app.user.models import User
 # For WebSocket management
 import asyncio
 from fastapi import WebSocket, WebSocketDisconnect
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+
+from carrot.db.connection import get_session_factory, db
 from carrot.app.chat.manager import manager
 from carrot.app.auth.utils import verify_and_decode_token
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
+
 
 
 chat_router = APIRouter()
@@ -101,39 +104,40 @@ async def websocket_endpoint(
     # 세션 자체가 아닌 세션을 만드는 '공장'을 주입받습니다.
     session_factory: async_sessionmaker = Depends(get_session_factory)
 ):
-    # 1. 일단 연결은 수락하지만, '미인증' 상태입니다.
+    # 1. 웹소켓 연결 수락
     await websocket.accept()
     current_user = None
 
+    # 2. 인증 절차
     try:
-        # 2. [보안] 첫 번째 메시지로 토큰 기다리기 (제한시간 5초)
-        try:
-            auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
-            token = auth_data.get("token")
-            current_user = await verify_and_decode_token(token) # 토큰 검증 로직
-            
-            if not current_user:
-                await websocket.close(code=4003) # Forbidden
-                return
-        except (asyncio.TimeoutError, Exception):
-            await websocket.close(code=4008) # 인증 시간 초과
+        auth_message = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
+        token = auth_message.get("token")
+        current_user = await verify_and_decode_token(token) # 토큰 검증 로직
+
+        if not current_user:
+            await websocket.close(code=4003) # Forbidden
             return
+        
+    except (asyncio.TimeoutError, Exception):
+        await websocket.close(code=4008) # 인증 시간 초과
+        return
 
-        # 3. 인증 성공 시 매니저에 등록
-        await manager.connect(websocket, room_id)
+    # 3. 연결 관리
+    await manager.connect(websocket, room_id)
 
-        # 4. 메인 루프
+    # 4. 메시지 수신 및 브로드캐스트 루프
+    try:
         while True:
             data = await websocket.receive_json()
             
             # [비동기 세션 이슈 해결] 메시지를 처리할 때마다 새로운 세션을 생성
-            async with session_factory() as db:
+            async with session_factory() as session:
                 try:
-                    # DB 저장 로직
+                    # 메시지 저장
                     new_msg = await chat_service.save_new_message(
-                        db, room_id, current_user.id, data["content"]
+                        session, room_id, current_user.id, data["content"]
                     )
-                    await db.commit() # 명시적 커밋
+                    await session.commit()
                     
                     # 브로드캐스트
                     await manager.broadcast_to_room(room_id, {
@@ -143,7 +147,7 @@ async def websocket_endpoint(
                         "created_at": new_msg.created_at.isoformat()
                     })
                 except Exception as e:
-                    await db.rollback() # 에러 발생 시 롤백하여 세션 오염 방지
+                    await session.rollback() # 에러 발생 시 롤백하여 세션 오염 방지
                     await websocket.send_json({"error": "메시지 전송 실패"})
                     print(f"DB Error: {e}")
 
