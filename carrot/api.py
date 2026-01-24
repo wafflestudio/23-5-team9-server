@@ -7,7 +7,7 @@ from carrot.app.product.router import product_router
 from carrot.app.region.router import region_router
 from carrot.app.pay.router import pay_router
 # from carrot.app.image.router import image_router
-# from carrot.app.chat.websocket import chat_ws_router
+from carrot.app.websocket.router import chat_ws_router
 
 api_router = APIRouter()
 
@@ -18,4 +18,4 @@ api_router.include_router(product_router, prefix="/product", tags=["product"])
 # api_router.include_router(image_router, prefix="/image", tags=["image"])
 api_router.include_router(region_router, prefix="/region", tags=["region"])
 api_router.include_router(pay_router, prefix="/pay", tags=["pay"])
-# api_router.include_router(chat_ws_router, prefix="/ws", tags=["chat"])
+api_router.include_router(chat_ws_router, prefix="/ws", tags=["chat"])
