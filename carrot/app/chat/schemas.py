@@ -1,6 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
+
+from carrot.app.user.schemas import UserResponse
 
 # 메시지 전송 요청
 class MessageCreate(BaseModel):
@@ -52,3 +54,41 @@ class OpponentStatus(BaseModel):
 
     class Config:
         from_attributes = True
+
+# --- 그룹 채팅 멤버 스키마 ---
+class GroupChatMemberRead(BaseModel):
+    id: int
+    user_id: str
+    room_id: str
+    is_admin: bool
+    joined_at: datetime
+    # 서비스 로직에서 joinedload로 가져온 유저 정보를 담습니다.
+    user: UserResponse
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- 그룹 채팅방 스키마 ---
+class GroupChatCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    max_members: int = 100
+
+class GroupChatRead(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    max_members: int
+    created_at: datetime
+    members: List["GroupChatMemberRead"] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class GroupChatListRead(BaseModel):
+    room_id: str
+    title: str
+    last_message: Optional[str] = None
+    last_message_at: Optional[datetime] = None
+    unread_count: int = 0
+    member_count: int = 0  # 현재 몇 명 참여 중인지 보여주면 좋음
+
+    model_config = ConfigDict(from_attributes=True)

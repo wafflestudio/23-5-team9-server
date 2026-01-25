@@ -7,7 +7,7 @@ from carrot.app.product.router import product_router
 from carrot.app.region.router import region_router
 from carrot.app.pay.router import pay_router
 # from carrot.app.image.router import image_router
-# from carrot.app.chat.websocket import chat_ws_router
+# from carrot.app.chat.router import chat_ws_router
 
 api_router = APIRouter()
 
