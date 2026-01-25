@@ -1,10 +1,12 @@
+from typing import List, Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Annotated
+from sqlalchemy import select, and_, or_, func, desc
+
 
 from carrot.app.chat.models import GroupChatRoom, ChatRoom, ChatMessage, GroupChatMember
 from carrot.app.chat.schemas import (
-    ChatRoomRead, MessageRead, MessageCreate, ChatRoomListRead, OpponentStatus, 
+    ChatRoomRead, GroupChatCreate, MessageRead, MessageCreate, ChatRoomListRead, OpponentStatus, 
     GroupChatRead, GroupChatMemberRead, GroupChatListRead
 )
 from carrot.app.chat.services import chat_service 
@@ -140,7 +142,7 @@ async def list_my_rooms(
     rooms = await chat_service.get_user_chat_rooms(db, current_user.id)
     return rooms
 
-### 3. 메시지 전송
+### 3. 메시지 전송(이제 WebSocket으로 대체 가능, 이미지 등을 보내야하는 경우 사용하기 위해 유지)
 @chat_router.post("/rooms/{room_id}/messages", response_model=MessageRead)
 async def send_message(
     room_id: str, 
@@ -151,7 +153,7 @@ async def send_message(
     new_msg = await chat_service.save_new_message(db, room_id, current_user.id, msg_in.content)
     return new_msg
 
-### 4. 메시지 내역 및 업데이트 확인 (폴링)
+### 4. 메시지 내역 및 업데이트 확인
 @chat_router.get("/rooms/{room_id}/messages", response_model=List[MessageRead])
 async def get_messages(
     room_id: str, 
@@ -198,7 +200,7 @@ async def get_opponent_status(
 ### 1. 오픈 그룹 채팅방 생성 (방장)
 @chat_router.post("/rooms/group", response_model=GroupChatRead)
 async def create_open_group_room(
-    room_in: GroupChatRoom,
+    room_in: GroupChatCreate,
     current_user: Annotated[User, Depends(login_with_header)],
     db: AsyncSession = Depends(get_db_session)
 ):
