@@ -48,11 +48,8 @@ async def websocket_endpoint(
             auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
             token = auth_data.get("token")
             
-            if token == "test_token":
-                current_user_id = "37875d15-4555-4897-b53e-eabebc5710a9"
-            else:
-                claims = verify_and_decode_token(token, AUTH_SETTINGS.ACCESS_TOKEN_SECRET)
-                current_user_id = claims.get("sub") 
+            claims = verify_and_decode_token(token, AUTH_SETTINGS.ACCESS_TOKEN_SECRET)
+            current_user_id = claims.get("sub") 
             
             if not current_user_id:
                 raise InvalidTokenException()
