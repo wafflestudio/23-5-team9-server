@@ -9,7 +9,7 @@ import uuid
 from carrot.app.product.repositories import ProductRepository
 
 from carrot.app.image.models import ProductImage
-from carrot.app.image.exceptions import FileUploadFailedException, NotYourProductException
+from carrot.app.image.exceptions import FileUploadFailedException
 from carrot.app.image.repositories import ImageRepository
 from carrot.common.exceptions import InvalidFormatException
 
