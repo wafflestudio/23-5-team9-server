@@ -16,7 +16,7 @@ class Product(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     owner_id:  Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(50))
-    image_ids: Mapped[list] = mapped_column(JSON, default=[])
+    image_ids: Mapped[list] = mapped_column(JSON, default=[], nullable=False)
     content: Mapped[str | None] = mapped_column(String(500))
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
