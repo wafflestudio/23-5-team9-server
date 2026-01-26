@@ -113,3 +113,5 @@ watchfiles==1.1.1
     # via uvicorn
 websockets==15.0.1
     # via uvicorn
+boto3==1.30.28
+    # via waffle-toy-project
