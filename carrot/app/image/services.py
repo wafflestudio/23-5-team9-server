@@ -58,3 +58,8 @@ class ImageService:
         image = await self.repository.get_product_image_by_image_id(image_id)
         
         return image
+    
+    async def remove_product_image(self, image_id: str) -> None:
+        image = await self.repository.get_product_image_by_image_id(image_id)
+        
+        await self.repository.remove_product_image(image)
