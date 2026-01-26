@@ -7,18 +7,16 @@ from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.repositories import ProductRepository
 from carrot.app.product.exceptions import NotYourProductException, InvalidProductIDException
 from carrot.common.exceptions import InvalidFormatException
-# from carrot.app.image.models import ProductImage
 
 class ProductService:
     def __init__(self, product_repository: Annotated[ProductRepository, Depends()]) -> None:
         self.repository = product_repository
 
-    async def create_post(self, user_id: str, title: str, content: str, price: int, category_id: str, region_id: str) -> Product:
-        # image_objects = [ProductImage(image_url=img_url) for img_url in images]
+    async def create_post(self, user_id: str, title: str, image_ids: list, content: str, price: int, category_id: str, region_id: str) -> Product:
         product = Product(
             owner_id = user_id,
             title = title,
-            # images = image_objects,
+            image_ids = image_ids,
             content = content,
             price = price,
             category_id = category_id,
@@ -38,8 +36,6 @@ class ProductService:
             raise NotYourProductException
         
         product.title = title
-        # image_objects = [ProductImage(image_url=img_url) for img_url in images]
-        # product.images = image_objects
         product.content = content
         product.price = price
         product.category_id = category_id

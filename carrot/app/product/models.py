@@ -1,24 +1,22 @@
 import uuid
-from sqlalchemy import String, Integer, ForeignKey, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING
 
 from carrot.db.common import Base
 
 from carrot.app.user.models import User
+from carrot.app.image.models import ProductImage
 from carrot.app.category.models import Category
 from carrot.app.region.models import Region
-
-# if TYPE_CHECKING:
-#     from carrot.app.image.models import ProductImage
     
 class Product(Base):
     __tablename__ = "product"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    owner_id:  Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
+    owner_id:  Mapped[str] = mapped_column(String(36), ForeignKey("user.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(50))
-    # images: Mapped[list["ProductImage"]] = relationship("ProductImage", back_populates="product", cascade="all, delete-orphan")
+    image_ids: Mapped[list] = mapped_column(JSON, nullable=False, index=True)
     content: Mapped[str | None] = mapped_column(String(500))
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, default=0)

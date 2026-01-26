@@ -43,14 +43,13 @@ def skip_none(validator: Callable[[T], T]) -> Callable[[T | None], T | None]:
 
 class ProductPostRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
-    # images: List[str]
+    image_ids: list
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
 
 class ProductPatchRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
-    # images: List[str]
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
@@ -61,7 +60,7 @@ class ProductResponse(BaseModel):
     id: str
     owner_id: str
     title: str
-    # images: List[str]
+    image_ids: List[str]
     content: str | None
     price: int
     like_count: int
