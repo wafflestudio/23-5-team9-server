@@ -32,8 +32,8 @@ origins = [AUTH_SETTINGS.ALLOW_ORIGIN.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=origins,
-    allow_origins=["*"],    # 임시로 모든 오리진 허용
+    allow_origins=origins,
+    # allow_origins=["*"],    # 임시로 모든 오리진 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
