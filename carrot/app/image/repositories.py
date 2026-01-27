@@ -30,3 +30,7 @@ class ImageRepository:
         posts = await self.session.execute(query)
         
         return posts.scalars().one_or_none()
+    
+    async def remove_product_image(self, image: ProductImage) -> None:
+        await self.session.delete(image)
+        await self.session.commit()
