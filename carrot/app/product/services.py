@@ -28,7 +28,7 @@ class ProductService:
         new = await self.repository.create_post(product)
         return new
 
-    async def update_post(self, user_id: str, id: str, title: str, content: str, price: int, category_id: str, region_id: str) -> Product:
+    async def update_post(self, user_id: str, id: str, title: str, image_ids: list, content: str, price: int, category_id: str, region_id: str) -> Product:
         product = await self.repository.get_post_by_product_id(id)
 
         if product is None:
@@ -38,6 +38,7 @@ class ProductService:
             raise NotYourProductException
         
         product.title = title
+        product.image_ids = image_ids
         product.content = content
         product.price = price
         product.category_id = category_id

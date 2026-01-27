@@ -44,6 +44,7 @@ async def update_post(
         user.id,
         product_id,
         request.title,
+        request.image_ids,
         request.content,
         request.price,
         request.category_id,

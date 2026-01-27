@@ -50,6 +50,7 @@ class ProductPostRequest(BaseModel):
 
 class ProductPatchRequest(BaseModel):
     title: Annotated[str, AfterValidator(validate_title)]
+    image_ids: list
     content: Annotated[str, AfterValidator(validate_content)]
     price: Annotated[int, AfterValidator(validate_price)]
     category_id: str
