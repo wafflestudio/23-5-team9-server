@@ -5,8 +5,8 @@ from typing import List, Optional, Annotated
 from carrot.db.connection import get_db_session
 from carrot.app.auth.utils import login_with_header
 
-from carrot.app.auction.services import AuctionService
-from carrot.app.auction.schemas import AuctionCreate, AuctionResponse # Pydantic 모델 가정
+from carrot.app.auction.services import AuctionService, BidService
+from carrot.app.auction.schemas import AuctionCreate, AuctionResponse, BidCreate, BidResponse # Pydantic 모델 가정
 
 from carrot.app.user.models import User
 
@@ -40,3 +40,29 @@ async def get_auctions(
     
     auctions = await service.list_auctions(category_id, region_id)
     return auctions
+
+# 3. 경매 상세 조회
+@auction_router.get("/{auction_id}", response_model=AuctionResponse)
+async def get_auction_detail(
+    auction_id: str,
+    service: Annotated[AuctionService, Depends()],
+) -> AuctionResponse:
+    auction = await service.get_auction_details(auction_id)
+    return AuctionResponse.model_validate(auction)
+
+# 4. 입찰하기
+@auction_router.post("/{auction_id}/bids", response_model=BidResponse)
+async def place_bid(
+    auction_id: str,
+    bid_data: BidCreate,
+    bidder: Annotated[User, Depends(login_with_header)],
+    bid_service: Annotated[BidService, Depends()],
+) -> BidResponse:
+
+    bid = await bid_service.place_bid(
+        auction_id=auction_id,
+        bidder_id=bidder.id,
+        bid_price=bid_data.bid_price
+    )
+
+    return BidResponse.model_validate(bid)

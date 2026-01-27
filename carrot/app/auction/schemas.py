@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from enum import Enum
 
+from carrot.app.product.schemas import ProductResponse
+
 from sqlalchemy import func
 
 # 경매 상태 Enum (모델과 맞춤)
@@ -38,6 +40,20 @@ class AuctionResponse(BaseModel):
     end_at: datetime
     bid_count: int
     status: AuctionStatus
+    product: ProductResponse
 
+    class Config:
+        from_attributes = True
+
+class BidCreate(BaseModel):
+    bid_price: int = Field(..., gt=0)
+
+class BidResponse(BaseModel):
+    id: str
+    auction_id: str
+    bidder_id: str
+    bid_price: int
+    bid_at: datetime
+    
     class Config:
         from_attributes = True

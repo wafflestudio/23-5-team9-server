@@ -28,22 +28,29 @@ class AuctionRepository:
         self.session.add(auction)
         
         await self.session.commit()
-        await self.session.refresh(auction)
+        await self.session.refresh(auction, attribute_names=["product"])
         return auction
     
     async def get_auction_by_id(self, auction_id: str) -> Optional[Auction]:
+        # 1. 쿼리 작성 (bids 로딩 제거)
         stmt = (
             select(Auction)
             .where(Auction.id == auction_id)
-            .options(joinedload(Auction.bids))
+            .options(joinedload(Auction.product))  # 상품 정보는 보통 같이 필요하니까요!
         )
-        result = await self.session.execute(stmt)
-
-        if not result:
-            raise AuctionNotFoundError
         
-        return result.scalar_one_or_none()
-    
+        result = await self.session.execute(stmt)
+        
+        # 2. 결과 추출
+        # 이제 1:N 조인이 없으므로 .unique()가 없어도 에러는 안 나지만, 
+        # 관습적으로 넣어두거나 scalar_one_or_none()으로 안전하게 받습니다.
+        auction = result.scalar_one_or_none()
+
+        if not auction:
+            raise AuctionNotFoundError()
+
+        return auction
+
     async def get_active_auctions(
             self,
             category_id: Optional[str] = None,
@@ -70,15 +77,24 @@ class AuctionRepository:
         await self.session.delete(auction)
         await self.session.commit()
 
-    async def update_auction_status(self, auction: Auction) -> Auction:
+    async def update_auction(self, auction: Auction) -> Auction:
         merged = await self.session.merge(auction)
         await self.session.commit()
+        await self.session.refresh(merged)
+        return merged
+    
+    async def update_auction_without_commit(self, auction: Auction) -> Auction:
+        merged = await self.session.merge(auction)
         await self.session.refresh(merged)
         return merged
 
 class BidRepository:
     def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
         self.session = session
+
+    async def add_bid_without_commit(self, bid: Bid) -> Bid:
+        self.session.add(bid)
+        return bid
 
     async def place_bid(self, bid: Bid) -> Bid:
         self.session.add(bid)
