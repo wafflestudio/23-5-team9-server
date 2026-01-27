@@ -8,7 +8,7 @@ import uuid
 
 from carrot.app.product.repositories import ProductRepository
 
-from carrot.app.image.models import ProductImage
+from carrot.app.image.models import Image
 from carrot.app.image.exceptions import FileUploadFailedException
 from carrot.app.image.repositories import ImageRepository
 from carrot.common.exceptions import InvalidFormatException
@@ -20,7 +20,7 @@ class ImageService:
     def __init__(self, image_repository: Annotated[ImageRepository, Depends()]) -> None:
         self.repository = image_repository
 
-    async def upload_product_image(self, file) -> ProductImage:       
+    async def upload_image(self, file) -> Image:       
         image_id = str(uuid.uuid4())
         file_extension = file.filename.split(".")[-1]
         s3_filename = f"{image_id}.{file_extension}"
@@ -37,29 +37,20 @@ class ImageService:
         except Exception as e:
             raise FileUploadFailedException
                     
-        image = ProductImage(
+        image = Image(
             id = image_id,
             image_url = file_url
         )
         
-        new = await self.repository.upload_product_image(image)
+        new = await self.repository.upload_image(image)
         return new
     
-    # async def upload_profile_image(self, user_id: str, url: str) -> UserImage:
-    #     image = UserImage(
-    #         image_url = url,
-    #         user_id = user_id
-    #     )
-        
-    #     new = await self.repository.upload_profile_image(image)
-    #     return new
-    
-    async def view_product_image(self, image_id: str) -> ProductImage:              
-        image = await self.repository.get_product_image_by_image_id(image_id)
+    async def view_image(self, image_id: str) -> Image:              
+        image = await self.repository.get_image_by_image_id(image_id)
         
         return image
     
     async def remove_product_image(self, image_id: str) -> None:
-        image = await self.repository.get_product_image_by_image_id(image_id)
+        image = await self.repository.get_image_by_image_id(image_id)
         
-        await self.repository.remove_product_image(image)
+        await self.repository.remove_image(image)

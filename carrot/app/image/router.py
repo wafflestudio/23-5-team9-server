@@ -19,28 +19,35 @@ async def upload_product_image(
     service: Annotated[ImageService, Depends()],
     file: UploadFile = File(...),
 ) -> ImageResponse:
-    image = await service.upload_product_image(
+    image = await service.upload_image(
         file,
     )
     return ImageResponse.model_validate(image)
 
-# @image_router.post("/user", status_code=201, response_model=ImageResponse)
-# async def upload_profile_image(
-#     user: Annotated[User, Depends(login_with_header)],
-#     service: Annotated[ImageService, Depends()],
-#     file: UploadFile = File(...),
-# ) -> ImageResponse:
-#     image = await service.upload_profile_image(
-#         user.id,
-#         file,
-#     )
-#     return ImageResponse.model_validate(image)
+@image_router.post("/user", status_code=201, response_model=ImageResponse)
+async def upload_profile_image(
+    service: Annotated[ImageService, Depends()],
+    file: UploadFile = File(...),
+) -> ImageResponse:
+    image = await service.upload_image(
+        file,
+    )
+    return ImageResponse.model_validate(image)
 
 @image_router.get("/product/{image_id}", status_code=200, response_model=ImageResponse)
 async def view_product_image(
     service: Annotated[ImageService, Depends()],
     image_id: str
 ) -> ImageResponse:
-    image = await service.view_product_image(image_id)
+    image = await service.view_image(image_id)
+    
+    return ImageResponse.model_validate(image)
+
+@image_router.get("/user/{image_id}", status_code=200, response_model=ImageResponse)
+async def view_profile_image(
+    service: Annotated[ImageService, Depends()],
+    image_id: str
+) -> ImageResponse:
+    image = await service.view_image(image_id)
     
     return ImageResponse.model_validate(image)

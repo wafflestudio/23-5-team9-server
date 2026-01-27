@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 from carrot.db.common import Base
 
 from carrot.app.user.models import User
-from carrot.app.image.models import ProductImage
 from carrot.app.category.models import Category
 from carrot.app.region.models import Region
     

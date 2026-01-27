@@ -5,14 +5,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from carrot.db.common import Base
 from carrot.app.user.models import User
 
-class ProductImage(Base):
-    __tablename__ = "product_image"
+class Image(Base):
+    __tablename__ = "image"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     image_url: Mapped[str] = mapped_column(String(255), nullable=False)
-    
-# class UserImage(Base):
-#     __tablename__ = "user_image"
-
-#     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-#     image_url: Mapped[str] = mapped_column(String(255), nullable=False)
