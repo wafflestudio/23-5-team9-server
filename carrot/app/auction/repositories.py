@@ -61,7 +61,7 @@ class AuctionRepository:
         if region_id:
             stmt = stmt.join(Auction.product).where(Product.region_id == region_id)
         
-        stmt = stmt.options(contains_eager(Auction.product))
+        stmt = stmt.order_by(Auction.end_at.asc())
 
         result = await self.session.execute(stmt)
         return result.scalars().all()

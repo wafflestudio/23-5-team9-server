@@ -29,3 +29,14 @@ async def create_new_auction(
         auction_data=auction_data
     )
     return AuctionResponse.model_validate(auction)
+
+# 2. 경매 목록 조회 (카테고리, 지역 필터링)
+@auction_router.get("/", response_model=List[AuctionResponse])
+async def get_auctions(
+    service: Annotated[AuctionService, Depends()],
+    category_id: Optional[str] = Query(None, description="카테고리 ID로 필터링"),
+    region_id: Optional[str] = Query(None, description="지역 ID로 필터링"),
+) -> List[AuctionResponse]:
+    
+    auctions = await service.list_auctions(category_id, region_id)
+    return auctions

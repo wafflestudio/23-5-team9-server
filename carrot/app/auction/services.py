@@ -33,3 +33,6 @@ class AuctionService:
         )
 
         return await self.repository.create_auction(product, auction)
+    
+    async def list_auctions(self, category_id: str | None = None, region_id: str | None = None) -> List[Auction]:
+        return await self.repository.get_active_auctions(category_id, region_id)
