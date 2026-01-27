@@ -16,6 +16,8 @@ import carrot.app.image.models  # noqa: F401
 import carrot.app.region.models  # noqa: F401
 import carrot.app.user.models  # noqa: F401
 import carrot.app.pay.models  # noqa: F401
+import carrot.app.auction.models  # noqa: F401
+import carrot.app.image.models  # noqa: F401
 
 
 config = context.config
