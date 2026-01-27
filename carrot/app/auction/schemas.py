@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from enum import Enum
 
@@ -12,55 +12,31 @@ class AuctionStatus(str, Enum):
     FAILED = "failed"
     CANCELED = "canceled"
 
-# --- 입찰 (Bid) 스키마 ---
-class BidBase(BaseModel):
-    amount: int = Field(..., gt=0, description="입찰 금액은 0보다 커야 합니다.")
-
-class BidCreate(BidBase):
-    pass
-
-class BidResponse(BidBase):
-    id: str
-    auction_id: str
-    bidder_id: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# --- 경매 (Auction) 스키마 ---
-class AuctionBase(BaseModel):
-    start_price: int = Field(..., ge=0)
-    end_at: datetime
+class AuctionCreate(BaseModel):
+    starting_price: int = Field(..., gt=0, description="경매 시작 가격")
+    end_at: datetime = Field(..., description="경매 종료 시간")
 
     @field_validator("end_at")
-    @classmethod
-    def check_future_date(cls, v: datetime):
-        if v <= func.now():
-            raise ValueError("마감 시간은 현재 시간보다 미래여야 합니다.")
+    @classmethod  # Pydantic V2에서는 classmethod로 정의하는 것이 정석입니다.
+    def validate_end_at(cls, v: datetime) -> datetime:
+        # v에 시간대 정보가 없다면 UTC로 가정
+        if v.tzinfo is None:
+            v = v.replace(tzinfo=timezone.utc)
+            
+        # 현재 시간을 UTC 기준으로 가져옴
+        current_time = datetime.now(timezone.utc)
+        
+        if v <= current_time:
+            raise ValueError("경매 종료 시간은 현재 시간보다 미래여야 합니다.")
         return v
-
-class AuctionCreate(AuctionBase):
-    product_id: str
-
-class AuctionResponse(AuctionBase):
+    
+class AuctionResponse(BaseModel):
     id: str
     product_id: str
-    current_bid: int
-    bid_count: int
-    status: AuctionStatus
-    
-    # 관계된 데이터 (필요 시 포함)
-    # product: Optional[ProductResponse] 
-    
-    class Config:
-        from_attributes = True
-
-# --- 상품 상세 조회 시 경매 정보를 포함하기 위한 스키마 ---
-class AuctionInProduct(BaseModel):
-    id: str
-    current_bid: int
+    starting_price: int
+    current_price: int
     end_at: datetime
+    bid_count: int
     status: AuctionStatus
 
     class Config:

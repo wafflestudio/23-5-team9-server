@@ -9,7 +9,6 @@ from carrot.app.user.models import User
 from carrot.app.image.models import ProductImage
 from carrot.app.category.models import Category
 from carrot.app.region.models import Region
-from carrot.app.auction.models import Auction, AuctionStatus
     
 class Product(Base):
     __tablename__ = "product"
@@ -31,9 +30,6 @@ class Product(Base):
     region: Mapped[Region] = relationship("Region")
     
     auction: Mapped["Auction"] = relationship("Auction", back_populates="product")
-    @property
-    def current_auction(self):
-        return next((a for a in self.auctions if a.status == AuctionStatus.ACTIVE), None)
     
 class UserProduct(Base):
     __tablename__ = "user_product"

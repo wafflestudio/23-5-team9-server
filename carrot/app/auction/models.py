@@ -8,10 +8,11 @@ from typing import TYPE_CHECKING
 
 from carrot.db.common import Base
 
-from carrot.app.product.models import Product
-from carrot.app.user.models import User
+if TYPE_CHECKING:
+    from carrot.app.product.models import Product
+    from carrot.app.user.models import User
 
-class AuctionStatus(Enum):
+class AuctionStatus(str, Enum):
     ACTIVE = "active"
     FINISHED = "finished"
     FAILED = "failed"
@@ -30,7 +31,7 @@ class Auction(Base):
     bid_count: Mapped[int] = mapped_column(Integer, default=0)              # 입찰 횟수
     status: Mapped[AuctionStatus] = mapped_column(String(20), default=AuctionStatus.ACTIVE)  # 경매 상태
 
-    product: Mapped[Product] = relationship("Product", back_populates="auction")
+    product: Mapped["Product"] = relationship("Product", back_populates="auction")
     bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="auction", cascade="all, delete-orphan")
 
     @property
@@ -38,6 +39,10 @@ class Auction(Base):
         if not self.bids:
             return None
         return max(self.bids, key=lambda bid: bid.bid_price)
+    
+    @property
+    def owner_id(self):
+        return self.product.owner_id
 
 class Bid(Base):
     __tablename__ = "bid"
@@ -49,5 +54,5 @@ class Bid(Base):
     bid_price: Mapped[int] = mapped_column(Integer, nullable=False)         # 입찰가
     bid_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())  # 입찰 시간
 
-    auction: Mapped[Auction] = relationship("Auction", back_populates="bids")
+    auction: Mapped["Auction"] = relationship("Auction", back_populates="bids")
     bidder: Mapped["User"] = relationship("User")
