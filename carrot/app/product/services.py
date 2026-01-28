@@ -9,25 +9,32 @@ from carrot.app.product.exceptions import NotYourProductException, InvalidProduc
 from carrot.app.image.services import ImageService
 from carrot.common.exceptions import InvalidFormatException
 
+from carrot.app.product.schemas import ProductPostRequest
+from carrot.app.auction.schemas import AuctionCreate
+
 class ProductService:
     def __init__(self, product_repository: Annotated[ProductRepository, Depends()], image_service: Annotated[ImageService, Depends()]) -> None:
         self.repository = product_repository
         self.image_service = image_service
 
-    async def create_post(self, user_id: str, title: str, image_ids: list, content: str, price: int, category_id: str, region_id: str) -> Product:
+    async def create_post(self, user_id: str, product_request: ProductPostRequest, region_id: str, auction_data: AuctionCreate) -> Product:
         product = Product(
             owner_id = user_id,
-            title = title,
-            image_ids = image_ids,
-            content = content,
-            price = price,
-            category_id = category_id,
+            title = product_request.title,
+            image_ids = product_request.image_ids,
+            content = product_request.content,
+            price = product_request.price,
+            category_id = product_request.category_id,
             region_id = region_id,
         )
-        
-        new = await self.repository.create_post(product)
-        return new
 
+        new_product = await self.repository.create_post(product)
+
+        if auction_data is not None:
+            await self.repository.create_auction(new_product, auction_data)
+
+        return new_product
+    
     async def update_post(self, user_id: str, id: str, title: str, image_ids: list, content: str, price: int, category_id: str, region_id: str) -> Product:
         product = await self.repository.get_post_by_product_id(id)
 
