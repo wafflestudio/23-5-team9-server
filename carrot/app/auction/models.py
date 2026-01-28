@@ -4,7 +4,7 @@ from enum import Enum
 from sqlalchemy import String, Integer, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from carrot.db.common import Base
 
@@ -24,7 +24,7 @@ class Auction(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     product_id: Mapped[str] = mapped_column(String(36), ForeignKey("product.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
 
-    starting_price: Mapped[int] = mapped_column(Integer, nullable=False)    # 시작가
+    # starting_price: Mapped[int] = mapped_column(Integer, nullable=False)    # 시작가
     current_price: Mapped[int] = mapped_column(Integer, nullable=False)     # 현재가
     # is_sold: Mapped[bool] = mapped_column(Boolean, default=False)         # Product의 is_sold와 중복
     end_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)      # 경매 종료 시간
@@ -34,11 +34,13 @@ class Auction(Base):
     product: Mapped["Product"] = relationship("Product", back_populates="auction", uselist=False)
     bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="auction", cascade="all, delete-orphan")
 
-    @property
-    def top_bid(self):
-        if not self.bids:
-            return None
-        return max(self.bids, key=lambda bid: bid.bid_price)
+    top_bid: Mapped[Optional["Bid"]] = relationship(
+        "Bid",
+        primaryjoin="and_(Auction.id==Bid.auction_id)",
+        order_by="desc(Bid.bid_price)",
+        uselist=False,
+        viewonly=True,
+    )
     
     @property
     def owner_id(self):
