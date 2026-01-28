@@ -5,7 +5,7 @@ from typing import List, Optional, Annotated
 from carrot.db.connection import get_db_session
 from carrot.app.auth.utils import login_with_header
 
-from carrot.app.auction.services import AuctionService, BidService
+from carrot.app.auction.services import AuctionService
 from carrot.app.auction.schemas import AuctionCreate, AuctionResponse, BidCreate, BidResponse # Pydantic 모델 가정
 
 from carrot.app.user.models import User
@@ -20,7 +20,7 @@ async def create_new_auction(
     owner: Annotated[User, Depends(login_with_header)],
     product_data: ProductPostRequest,
     auction_data: AuctionCreate,
-    service: Annotated[AuctionService, Depends()],
+    service: Annotated[AuctionService, Depends(AuctionService.create)],
 ) -> AuctionResponse:
     auction = await service.create_auction_with_product(
         owner_id=owner.id,
@@ -33,7 +33,7 @@ async def create_new_auction(
 # 2. 경매 목록 조회 (카테고리, 지역 필터링)
 @auction_router.get("/", response_model=List[AuctionResponse])
 async def get_auctions(
-    service: Annotated[AuctionService, Depends()],
+    service: Annotated[AuctionService, Depends(AuctionService.create)],
     category_id: Optional[str] = Query(None, description="카테고리 ID로 필터링"),
     region_id: Optional[str] = Query(None, description="지역 ID로 필터링"),
 ) -> List[AuctionResponse]:
@@ -45,7 +45,7 @@ async def get_auctions(
 @auction_router.get("/{auction_id}", response_model=AuctionResponse)
 async def get_auction_detail(
     auction_id: str,
-    service: Annotated[AuctionService, Depends()],
+    service: Annotated[AuctionService, Depends(AuctionService.create)],
 ) -> AuctionResponse:
     auction = await service.get_auction_details(auction_id)
     return AuctionResponse.model_validate(auction)
@@ -56,10 +56,10 @@ async def place_bid(
     auction_id: str,
     bid_data: BidCreate,
     bidder: Annotated[User, Depends(login_with_header)],
-    bid_service: Annotated[BidService, Depends()],
+    service: Annotated[AuctionService, Depends(AuctionService.create)],
 ) -> BidResponse:
 
-    bid = await bid_service.place_bid(
+    bid = await service.place_bid(
         auction_id=auction_id,
         bidder_id=bidder.id,
         bid_price=bid_data.bid_price
