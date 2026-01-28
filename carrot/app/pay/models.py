@@ -18,7 +18,7 @@ class Ledger(Base):
     __tablename__ = "ledger"
 
     id: Mapped[str] = mapped_column(
-        String(512), primary_key=True, default=lambda: str(uuid.uuid4())
+        String(512), primary_key=True
     )
 
     transaction_type: Mapped[TransactionType] = mapped_column(

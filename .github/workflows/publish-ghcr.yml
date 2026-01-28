@@ -105,6 +105,7 @@ jobs:
 
             # 서비스 갱신
             SERVICE_NAME="api_$TARGET"
+            docker system prune -af
             docker compose pull $SERVICE_NAME
             docker compose run --rm $SERVICE_NAME alembic upgrade head
             docker compose up -d $SERVICE_NAME

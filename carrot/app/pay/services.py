@@ -22,9 +22,16 @@ class PayService:
         self.user_repository = user_repository
         self.session = session
 
-    async def deposit(self, amount: int, description: str, user: User) -> Ledger:
+    async def deposit(
+        self, request_key: str, amount: int, description: str, user: User
+    ) -> Ledger:
         async with self.session.begin_nested():
+            ledger = await self.pay_repository.get_ledger_by_id(request_key)
+            if ledger:
+                return ledger
+
             ledger = Ledger(
+                id=request_key,
                 transaction_type=TransactionType.DEPOSIT,
                 amount=amount,
                 description=description,
@@ -41,9 +48,15 @@ class PayService:
             await self.user_repository.update_user(locked_user)
             return ledger
 
-    async def withdraw(self, amount: int, description: str, user: User) -> Ledger:
+    async def withdraw(
+        self, request_key: str, amount: int, description: str, user: User
+    ) -> Ledger:
         async with self.session.begin_nested():
+            ledger = await self.pay_repository.get_ledger_by_id(request_key)
+            if ledger:
+                return ledger
             ledger = Ledger(
+                id=request_key,
                 transaction_type=TransactionType.WITHDRAW,
                 amount=amount,
                 description=description,
@@ -64,7 +77,7 @@ class PayService:
             await self.user_repository.update_user(locked_user)
             return ledger
 
-    async def get_2_users_for_update(
+    async def _get_2_users_for_update(
         self, user_id1: str, user_id2: str
     ) -> tuple[User | None, User | None]:
         # consistent locking order to prevent deadlock
@@ -80,10 +93,19 @@ class PayService:
         return (user1, user2)
 
     async def transfer(
-        self, amount: int, description: str, receive_user_id: str, send_user: User
+        self,
+        request_key: str,
+        amount: int,
+        description: str,
+        receive_user_id: str,
+        send_user: User,
     ) -> Ledger:
         async with self.session.begin_nested():
+            ledger = await self.pay_repository.get_ledger_by_id(request_key)
+            if ledger:
+                return ledger
             ledger = Ledger(
+                id=request_key,
                 transaction_type=TransactionType.TRANSFER,
                 amount=amount,
                 description=description,
@@ -99,7 +121,7 @@ class PayService:
                     detail="Cannot transfer to self",
                 )
 
-            receive_user_locked, send_user_locked = await self.get_2_users_for_update(
+            receive_user_locked, send_user_locked = await self._get_2_users_for_update(
                 receive_user_id, send_user.id
             )
             if not send_user_locked:
@@ -120,5 +142,7 @@ class PayService:
 
             return ledger
 
-    async def get_transactions(self, user: User, limit: int, offset: int):
-        return await self.pay_repository.get_ledgers(user.id, limit, offset)
+    async def get_transactions(
+        self, user: User, limit: int, offset: int, partner_id: str | None
+    ):
+        return await self.pay_repository.get_ledgers(user.id, limit, offset, partner_id)

@@ -33,6 +33,7 @@ origins = [AUTH_SETTINGS.ALLOW_ORIGIN.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    # allow_origins=["*"],    # 임시로 모든 오리진 허용
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +49,7 @@ def root():
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    print(f"REAL ERROR: {exc}")
     for error in exc.errors():
         if error["type"] == "missing":
             raise MissingRequiredFieldException()
@@ -56,6 +58,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(CarrotException)
 async def carrot_exception_handler(request: Request, exc: CarrotException):
+    print(f"REAL ERROR: {exc}")
     return JSONResponse(
         status_code=exc.status_code,
         content={"error_code": exc.error_code, "error_msg": exc.error_msg},

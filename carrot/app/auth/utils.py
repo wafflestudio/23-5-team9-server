@@ -119,7 +119,4 @@ async def login_with_header_optional(
     if user is None:
         raise InvalidAccountException()
 
-    if user.status != UserStatus.ACTIVE:
-        raise OnboardingException()
-
     return user

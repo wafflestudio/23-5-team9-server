@@ -16,3 +16,11 @@ class InvalidProductIDException(CarrotException):
             error_code="ERR_002",
             error_msg="Invalid Product ID"
         )
+        
+class ShouldLoginException(CarrotException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=403,
+            error_code="ERR_003",
+            error_msg="Should Login"
+        )

@@ -40,7 +40,7 @@ class UserService:
 
     async def update_user(self, request: UserUpdateRequest, user: User) -> User:
         if not any(
-            [request.nickname, request.region_id, request.profile_image, request.coin]
+            [request.nickname, request.region_id, request.profile_image]
         ):
             raise InvalidFormatException()
 
