@@ -17,8 +17,9 @@ from carrot.app.auction.exceptions import (
 )
 
 class AuctionRepository:
-    def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
 
     async def create_auction(self, product: Product, auction: Auction) -> Auction:
         self.session.add(product)
@@ -80,18 +81,12 @@ class AuctionRepository:
     async def update_auction(self, auction: Auction) -> Auction:
         merged = await self.session.merge(auction)
         await self.session.commit()
-        await self.session.refresh(merged)
         return merged
     
     async def update_auction_without_commit(self, auction: Auction) -> Auction:
         merged = await self.session.merge(auction)
-        await self.session.refresh(merged)
         return merged
-
-class BidRepository:
-    def __init__(self, session: Annotated[AsyncSession, Depends(get_db_session)]) -> None:
-        self.session = session
-
+    
     async def add_bid_without_commit(self, bid: Bid) -> Bid:
         self.session.add(bid)
         return bid
@@ -116,3 +111,5 @@ class BidRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    
