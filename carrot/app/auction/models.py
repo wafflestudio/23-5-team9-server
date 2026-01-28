@@ -22,7 +22,7 @@ class Auction(Base):
     __tablename__ = "auction"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    product_id: Mapped[str] = mapped_column(String(36), ForeignKey("product.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id: Mapped[str] = mapped_column(String(36), ForeignKey("product.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
 
     starting_price: Mapped[int] = mapped_column(Integer, nullable=False)    # 시작가
     current_price: Mapped[int] = mapped_column(Integer, nullable=False)     # 현재가
@@ -31,7 +31,7 @@ class Auction(Base):
     bid_count: Mapped[int] = mapped_column(Integer, default=0)              # 입찰 횟수
     status: Mapped[AuctionStatus] = mapped_column(String(20), default=AuctionStatus.ACTIVE)  # 경매 상태
 
-    product: Mapped["Product"] = relationship("Product", back_populates="auction")
+    product: Mapped["Product"] = relationship("Product", back_populates="auction", uselist=False)
     bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="auction", cascade="all, delete-orphan")
 
     @property

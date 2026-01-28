@@ -18,7 +18,7 @@ class Product(Base):
     region_id: Mapped[str] = mapped_column(String(36), ForeignKey("region.id", ondelete="CASCADE"), nullable=False, index=True)
 
     title: Mapped[str] = mapped_column(String(50))
-    image_ids: Mapped[list] = mapped_column(JSON, default=[], nullable=False)
+    image_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     content: Mapped[str | None] = mapped_column(String(500))
     price: Mapped[int] = mapped_column(Integer, nullable=False)
     like_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -28,7 +28,7 @@ class Product(Base):
     category: Mapped[Category] = relationship("Category")
     region: Mapped[Region] = relationship("Region")
     
-    auction: Mapped["Auction"] = relationship("Auction", back_populates="product")
+    auction: Mapped["Auction"] = relationship("Auction", back_populates="product", uselist=False, cascade="all, delete-orphan")
     
 class UserProduct(Base):
     __tablename__ = "user_product"
