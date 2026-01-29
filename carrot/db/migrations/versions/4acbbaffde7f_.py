@@ -32,7 +32,12 @@ def upgrade() -> None:
         "auction",
         ["product_id"],
     )
-    op.add_column('product', sa.Column('image_ids', sa.JSON(), nullable=False))
+    columns = [c['name'] for c in insp.get_columns('product')]
+    if 'image_ids' not in columns:
+        op.add_column('product', sa.Column('image_ids', sa.JSON(), nullable=False))
+    else:
+        # 이미 있다면 로깅하거나 그냥 넘어갑니다.
+        print("Column 'image_ids' already exists, skipping.")
     # ### end Alembic commands ###
 
 
