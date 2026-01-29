@@ -23,22 +23,32 @@ def upgrade() -> None:
     bind = op.get_bind()
     insp = inspect(bind)
 
+    # 1. product_image 테이블 삭제 로직 (존재할 때만)
     if insp.has_table("product_image"):
-        # 인덱스 이름이 정확히 ix_product_image_id인지 확실할 때만 drop_index
-        op.drop_index("ix_product_image_id", table_name="product_image")
+        # 인덱스 존재 여부 확인 후 삭제
+        existing_indices = [idx['name'] for idx in insp.get_indexes("product_image")]
+        if "ix_product_image_id" in existing_indices:
+            op.drop_index("ix_product_image_id", table_name="product_image")
         op.drop_table("product_image")
-    op.create_unique_constraint(
-        "uq_auction_product_id",  # 이름은 원하는대로
-        "auction",
-        ["product_id"],
-    )
-    columns = [c['name'] for c in insp.get_columns('product')]
-    if 'image_ids' not in columns:
+
+    # 2. uq_auction_product_id 유니크 제약 조건 추가 (존재하지 않을 때만)
+    # auction 테이블의 모든 제약 조건 이름을 가져옵니다.
+    existing_constraints = [c['name'] for c in insp.get_unique_constraints("auction")]
+    if "uq_auction_product_id" not in existing_constraints:
+        op.create_unique_constraint(
+            "uq_auction_product_id",
+            "auction",
+            ["product_id"],
+        )
+    else:
+        print("Constraint 'uq_auction_product_id' already exists, skipping.")
+
+    # 3. image_ids 컬럼 추가 (존재하지 않을 때만)
+    existing_columns = [c['name'] for c in insp.get_columns('product')]
+    if 'image_ids' not in existing_columns:
         op.add_column('product', sa.Column('image_ids', sa.JSON(), nullable=False))
     else:
-        # 이미 있다면 로깅하거나 그냥 넘어갑니다.
         print("Column 'image_ids' already exists, skipping.")
-    # ### end Alembic commands ###
 
 
 def downgrade() -> None:
