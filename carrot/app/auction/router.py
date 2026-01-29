@@ -27,3 +27,13 @@ async def place_bid(
     )
 
     return BidResponse.model_validate(bid)
+
+@auction_router.get("/{auction_id}/top-bid", response_model=BidResponse)
+async def get_top_bid(
+    auction_id: str,
+    service: Annotated[AuctionService, Depends()],
+) -> BidResponse:
+    
+    top_bid = await service.get_top_bid(auction_id)
+
+    return BidResponse.model_validate(top_bid)

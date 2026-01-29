@@ -41,3 +41,11 @@ class BidTooLowError(CarrotException):
             error_code="AUC_005",
             error_msg="The bid price is too low.",
         )
+
+class NoBidsFoundError(CarrotException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="AUC_006",
+            error_msg="No bids found for this auction.",
+        )

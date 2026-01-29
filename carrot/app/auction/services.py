@@ -12,7 +12,8 @@ from carrot.db.connection import get_session_factory
 
 from carrot.app.auction.exceptions import (
     AuctionAlreadyExistsError, 
-    AuctionNotFoundError, 
+    AuctionNotFoundError,
+    NoBidsFoundError, 
     NotAllowedActionError,
     AuctionAlreadyFinishedError
 )
@@ -51,3 +52,16 @@ class AuctionService:
         await self.db_session.refresh(new_bid)
         await self.db_session.refresh(auction)
         return new_bid
+    
+    async def get_top_bid(self, auction_id: str) -> Bid:
+        auction = await self.repository.get_auction_by_id(auction_id)
+
+        if auction is None:
+            raise AuctionNotFoundError()
+
+        top_bid = await self.repository.get_top_bid_by_auction_id(auction_id)
+
+        if top_bid is None:
+            raise NoBidsFoundError()  # 입찰이 없는 경우
+
+        return top_bid
