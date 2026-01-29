@@ -78,17 +78,17 @@ class ProductResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class ProductListResponse(BaseModel):
-    id: str
-    owner_id: str
-    title: str
-    image_ids: List[str]
-    content: str | None
-    price: int
-    like_count: int
-    category_id: str
-    region_id: str
-    is_sold: bool
+# class ProductListResponse(BaseModel):
+#     id: str
+#     owner_id: str
+#     title: str
+#     image_ids: List[str]
+#     content: str | None
+#     price: int
+#     like_count: int
+#     category_id: str
+#     region_id: str
+#     is_sold: bool
 
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True

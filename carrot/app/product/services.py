@@ -106,17 +106,17 @@ class ProductService:
 
         return product
 
-    async def view_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None):
+    async def view_posts_by_query(self, user_id: str | None, keyword: str | None, region_id: str | None, show_auction: bool = False):
         products = await self.repository.get_posts_by_query(
             user_id=user_id,
             keyword=keyword,
             region_id=region_id,
-            with_auction=False,
+            show_auction_auction=show_auction,
         )
         return products
 
-    async def view_posts_all(self):
-        products = await self.repository.get_posts_all(with_auction=False)
+    async def view_posts_all(self, show_auction: bool = False):
+        products = await self.repository.get_posts_all(show_auction=show_auction)
         return products
 
     async def remove_post(self, user_id: str, product_id: str) -> None:
