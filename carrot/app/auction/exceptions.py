@@ -25,3 +25,19 @@ class NotAllowedActionError(CarrotException):
             error_code="AUC_003",
             error_msg="Action not allowed on this auction.",
         )
+
+class AuctionAlreadyFinishedError(CarrotException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="AUC_004",
+            error_msg="The auction has already finished.",
+        )
+
+class BidTooLowError(CarrotException):
+    def __init__(self) -> None:
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="AUC_005",
+            error_msg="The bid price is too low.",
+        )

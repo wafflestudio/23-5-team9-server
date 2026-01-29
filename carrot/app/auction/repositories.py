@@ -37,14 +37,12 @@ class AuctionRepository:
         stmt = (
             select(Auction)
             .where(Auction.id == auction_id)
-            .options(joinedload(Auction.product))  # 상품 정보는 보통 같이 필요하니까요!
+            .options(joinedload(Auction.product))
+            .with_for_update()  # 잠금 적용
         )
         
         result = await self.session.execute(stmt)
-        
-        # 2. 결과 추출
-        # 이제 1:N 조인이 없으므로 .unique()가 없어도 에러는 안 나지만, 
-        # 관습적으로 넣어두거나 scalar_one_or_none()으로 안전하게 받습니다.
+
         auction = result.scalar_one_or_none()
 
         if not auction:
