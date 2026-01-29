@@ -53,26 +53,29 @@ class AuctionRepository:
         return auction
 
     async def get_active_auctions(
-            self,
-            category_id: Optional[str] = None,
-            region_id: Optional[str] = None
-    )-> List[Auction]:
+        self,
+        category_id: Optional[str] = None,
+        region_id: Optional[str] = None,
+    ) -> List[Auction]:
         stmt = (
             select(Auction)
             .where(Auction.status == AuctionStatus.ACTIVE)
             .options(selectinload(Auction.product))
+            .order_by(Auction.end_at.asc())
         )
 
-        if category_id:
-            stmt = stmt.join(Auction.product).where(Product.category_id == category_id)
-        
-        if region_id:
-            stmt = stmt.join(Auction.product).where(Product.region_id == region_id)
-        
-        stmt = stmt.order_by(Auction.end_at.asc())
+        # ✅ 필터가 있을 때만 join 한 번
+        if category_id or region_id:
+            stmt = stmt.join(Auction.product)
+
+            if category_id:
+                stmt = stmt.where(Product.category_id == category_id)
+
+            if region_id:
+                stmt = stmt.where(Product.region_id == region_id)
 
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return result.scalars().unique().all()
 
     async def delete_auction(self, auction: Auction) -> None:
         await self.session.delete(auction)

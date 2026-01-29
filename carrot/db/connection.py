@@ -34,9 +34,6 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
             await session.rollback()
             raise
 
-def get_session_factory():
-    """
-    세션 객체가 아닌, 세션 생성기(factory)를 반환합니다.
-    웹소켓 루프 안에서 'async with factory() as session:' 형태로 사용하기 위함입니다.
-    """
-    return db.session_factory
+async def get_session_factory() -> AsyncGenerator[AsyncSession, None]:
+    async with db.session_factory() as session:
+        yield session
