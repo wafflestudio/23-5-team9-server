@@ -3,8 +3,6 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from enum import Enum
 
-from carrot.app.product.schemas import ProductResponse
-
 from sqlalchemy import func
 
 # 경매 상태 Enum (모델과 맞춤)
@@ -15,7 +13,7 @@ class AuctionStatus(str, Enum):
     CANCELED = "canceled"
 
 class AuctionCreate(BaseModel):
-    starting_price: int = Field(..., gt=0, description="경매 시작 가격")
+    # starting_price: int = Field(..., gt=0, description="경매 시작 가격")
     end_at: datetime = Field(..., description="경매 종료 시간")
 
     @field_validator("end_at")
@@ -32,15 +30,41 @@ class AuctionCreate(BaseModel):
             raise ValueError("경매 종료 시간은 현재 시간보다 미래여야 합니다.")
         return v
     
-class AuctionResponse(BaseModel):
+class AuctionProductSummary(BaseModel):
+    id: str
+    owner_id: str
+    title: str
+    image_ids: List[str]
+    content: str | None
+    price: int
+    like_count: int
+    category_id: str
+    region_id: str
+    is_sold: bool
+
+    class Config:
+        from_attributes = True
+    
+class AuctionListResponse(BaseModel):
     id: str
     product_id: str
-    starting_price: int
     current_price: int
     end_at: datetime
     bid_count: int
     status: AuctionStatus
-    product: ProductResponse
+
+    product: AuctionProductSummary
+
+    class Config:
+        from_attributes = True
+
+class AuctionResponse(BaseModel):
+    id: str
+    product_id: str
+    current_price: int
+    end_at: datetime
+    bid_count: int
+    status: AuctionStatus
 
     class Config:
         from_attributes = True
@@ -57,3 +81,4 @@ class BidResponse(BaseModel):
     
     class Config:
         from_attributes = True
+

@@ -27,8 +27,9 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_image_id'), 'image', ['id'], unique=False)
-    op.drop_index('ix_product_image_id', table_name='product_image')
-    op.drop_table('product_image')
+    op.execute("DROP TABLE IF EXISTS product_image")
+    # op.drop_index('ix_product_image_id', table_name='product_image')
+    # op.drop_table('product_image')
     # ### end Alembic commands ###
 
 
