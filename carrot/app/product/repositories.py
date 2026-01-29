@@ -1,7 +1,7 @@
 from typing import List
 
 from sqlalchemy import select, or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, contains_eager
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from carrot.app.product.models import Product
@@ -44,18 +44,20 @@ class ProductRepository:
         user_id: str | None,
         keyword: str | None,
         region_id: str | None,
-        with_auction: bool = False,
+        show_auction: bool = False,
     ) -> List[Product]:
         query = select(Product)
 
-        # 1. 필터링 로직 추가: with_auction이 False이면 Auction이 없는 것만 가져옴
-        if not with_auction:
+        # 1. 필터링 로직 추가: show_auction이 False이면 Auction이 없는 것만 가져옴
+        if not show_auction:
             # Product와 Auction을 Outer Join 한 뒤, Auction 데이터가 없는 것(None)만 필터링
-            query = query.outerjoin(Product.auction).where(Auction.id == None)
+            query = (
+                query.outerjoin(Product.auction)
+                .where(Auction.id == None)
+                .options(selectinload(Product.auction))
+            )
         else:
-            # Auction이 있는 것만 혹은 전체를 가져오고 싶다면 상황에 맞춰 innerjoin 등으로 변경 가능
-            # 현재는 'auction 정보를 포함해서' 가져온다는 의미로 selectinload 유지
-            query = query.options(selectinload(Product.auction))
+            query = query.join(Product.auction).options(contains_eager(Product.auction))
 
         if user_id:
             query = query.where(Product.owner_id == user_id)
@@ -75,14 +77,18 @@ class ProductRepository:
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def get_posts_all(self, with_auction: bool = False) -> List[Product]:
+    async def get_posts_all(self, show_auction: bool = False) -> List[Product]:
         query = select(Product)
 
-        if not with_auction:
+        if not show_auction:
             # 경매 상품 제외 (Auction ID가 없는 것만)
-            query = query.outerjoin(Product.auction).where(Auction.id == None)
+            query = (
+                query.outerjoin(Product.auction)
+                .where(Auction.id == None)
+                .options(selectinload(Product.auction))
+            )
         else:
-            query = query.options(selectinload(Product.auction))
+            query = query.join(Product.auction).options(contains_eager(Product.auction))
 
         result = await self.session.execute(query)
         return result.scalars().all()

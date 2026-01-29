@@ -6,7 +6,6 @@ from carrot.app.auth.utils import login_with_header, partial_login_with_header, 
 from carrot.app.user.models import User
 from carrot.app.product.models import Product, UserProduct
 from carrot.app.product.schemas import (
-    ProductListResponse,
     ProductPostRequest,
     ProductPatchRequest,
     ProductResponse,
@@ -60,25 +59,26 @@ async def view_post(
     
     return ProductResponse.model_validate(product)
 
-@product_router.get("/", status_code=200, response_model=List[ProductListResponse])
+@product_router.get("/", status_code=200, response_model=List[ProductResponse])
 async def view_posts(
     service: Annotated[ProductService, Depends()],
     user: Annotated[User | None, Depends(login_with_header_optional)],
     user_id: str | None = Query(default=None, alias="seller"),
     keyword: str | None = Query(default=None, alias="search"),
     region_id: str | None = Query(default=None, alias="region"),
-) -> List[ProductListResponse]:
+    auction: bool = Query(default=False, alias="auction"),
+) -> List[ProductResponse]:
     if user_id == "me":
         if user is None:
             raise ShouldLoginException
         user_id = user.id
 
     if user_id or keyword or region_id:
-        products = await service.view_posts_by_query(user_id, keyword, region_id)
+        products = await service.view_posts_by_query(user_id, keyword, region_id, show_auction=auction)
     else:
-        products = await service.view_posts_all()
+        products = await service.view_posts_all(show_auction=auction)
 
-    return [ProductListResponse.model_validate(p) for p in products]
+    return [ProductResponse.model_validate(p) for p in products]
 
 @product_router.delete("/{product_id}", status_code=200, response_model=None)
 async def remove_post(

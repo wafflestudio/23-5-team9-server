@@ -30,15 +30,15 @@ auction_router = APIRouter()
 #     )
 #     return AuctionResponse.model_validate(auction)
 
-# 2. 경매 목록 조회 (카테고리, 지역 필터링)
-@auction_router.get("/", response_model=List[AuctionListResponse])
-async def get_auctions(
-    service: Annotated[AuctionService, Depends(AuctionService.create)],
-    category_id: Optional[str] = Query(None, description="카테고리 ID로 필터링"),
-    region_id: Optional[str] = Query(None, description="지역 ID로 필터링"),
-) -> List[AuctionListResponse]:
-    auctions = await service.list_auctions(category_id, region_id)
-    return [AuctionListResponse.model_validate(a) for a in auctions]
+# # 2. 경매 목록 조회 (카테고리, 지역 필터링)
+# @auction_router.get("/", response_model=List[AuctionListResponse])
+# async def get_auctions(
+#     service: Annotated[AuctionService, Depends(AuctionService.create)],
+#     category_id: Optional[str] = Query(None, description="카테고리 ID로 필터링"),
+#     region_id: Optional[str] = Query(None, description="지역 ID로 필터링"),
+# ) -> List[AuctionListResponse]:
+#     auctions = await service.list_auctions(category_id, region_id)
+#     return [AuctionListResponse.model_validate(a) for a in auctions]
 
 # # 3. 경매 상세 조회
 # @auction_router.get("/{auction_id}", response_model=AuctionResponse)
