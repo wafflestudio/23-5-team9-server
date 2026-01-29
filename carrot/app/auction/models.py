@@ -34,18 +34,6 @@ class Auction(Base):
     product: Mapped["Product"] = relationship("Product", back_populates="auction", uselist=False)
     bids: Mapped[list["Bid"]] = relationship("Bid", back_populates="auction", cascade="all, delete-orphan")
 
-    top_bid: Mapped[Optional["Bid"]] = relationship(
-        "Bid",
-        primaryjoin="and_(Auction.id==Bid.auction_id)",
-        order_by="desc(Bid.bid_price)",
-        uselist=False,
-        viewonly=True,
-    )
-    
-    @property
-    def owner_id(self):
-        return self.product.owner_id
-
 class Bid(Base):
     __tablename__ = "bid"
 

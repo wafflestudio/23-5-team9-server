@@ -44,15 +44,6 @@ class AuctionProductSummary(BaseModel):
 
     class Config:
         from_attributes = True
-
-class BidSummaryResponse(BaseModel):
-    id: str
-    bidder_id: str
-    bid_price: int
-    bid_at: datetime
-
-    class Config:
-        from_attributes = True
     
 class AuctionListResponse(BaseModel):
     id: str
