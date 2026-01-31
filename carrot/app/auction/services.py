@@ -48,9 +48,9 @@ class AuctionService:
         auction.bid_count += 1
         await self.repository.update_auction_without_commit(auction)
 
-        await self.db_session.commit()
-        await self.db_session.refresh(new_bid)
-        await self.db_session.refresh(auction)
+        await self.session.commit()
+        await self.session.refresh(new_bid)
+        await self.session.refresh(auction)
         return new_bid
     
     async def get_top_bid(self, auction_id: str) -> Bid:
