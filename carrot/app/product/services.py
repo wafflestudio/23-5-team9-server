@@ -111,7 +111,7 @@ class ProductService:
             user_id=user_id,
             keyword=keyword,
             region_id=region_id,
-            show_auction_auction=show_auction,
+            show_auction=show_auction,
         )
         return products
 
